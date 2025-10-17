@@ -7,10 +7,20 @@
     tools:context=".ui.login.LoginFragment">
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/sign_in_button"
+        android:id="@+id/google_sign_in_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Sign in with Google"
+        app:layout_constraintBottom_toTopOf="@+id/dev_login_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/dev_login_button"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Continue (Dev)"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

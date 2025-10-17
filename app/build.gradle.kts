@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose.compiler)
+    alias(libs.plugins.google.gms.services)
 }
 
 android {
@@ -26,15 +28,17 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
     buildFeatures {
+        compose = true
         viewBinding = true
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    kotlin {
+        jvmToolchain(11)
     }
 }
 
@@ -52,14 +56,25 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 
-    // Google Services & Auth
+    // Google & Firebase Services
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.firebase.auth)
+    implementation(libs.play.services.auth)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+
+    // Compose
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.material3)
+    debugImplementation(libs.androidx.ui.tooling.preview)
 
     // Testing
     testImplementation(libs.junit)
