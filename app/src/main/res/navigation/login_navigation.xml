@@ -9,6 +9,19 @@
         android:id="@+id/navigation_login"
         android:name="dev.klarkengkoy.triptrack.ui.login.LoginFragment"
         android:label="@string/title_login"
-        tools:layout="@layout/fragment_login" />
+        tools:layout="@layout/fragment_login" >
+        <action
+            android:id="@+id/action_login_to_legal"
+            app:destination="@id/navigation_legal" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_legal"
+        android:name="dev.klarkengkoy.triptrack.ui.login.LegalFragment"
+        android:label="@string/title_legal" >
+        <argument
+            android:name="clicked_text"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

@@ -75,7 +75,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.ui.tooling.preview)
+
+    // Accompanist
+    implementation(libs.accompanist.systemuicontroller)
 
     // Testing
     testImplementation(libs.junit)

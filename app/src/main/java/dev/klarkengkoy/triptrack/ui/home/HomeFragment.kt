@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import dev.klarkengkoy.triptrack.MainActivity
 import dev.klarkengkoy.triptrack.databinding.FragmentHomeBinding
 
 class HomeFragment : Fragment() {
@@ -32,6 +33,11 @@ class HomeFragment : Fragment() {
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
+
+        binding.fab.setOnClickListener {
+            (activity as? MainActivity)?.toggleTheme()
+        }
+
         return root
     }
 

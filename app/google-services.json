@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "838259743023",
+    "project_id": "triptrack-f2d65",
+    "storage_bucket": "triptrack-f2d65.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:838259743023:android:e1c2da113f1243aa2929da",
+        "android_client_info": {
+          "package_name": "dev.klarkengkoy.triptrack"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "838259743023-jha56pjt91hia7oseof83n57310k8lj0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dev.klarkengkoy.triptrack",
+            "certificate_hash": "6d9876963390f414f2ed6f19d951ee4ef48fd3aa"
+          }
+        },
+        {
+          "client_id": "838259743023-n5j8cev00rkv8b85ga4mq9ajlnppn9br.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIHITX3mUEijlAW6FZvtdZSy2sA066q14"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "838259743023-n5j8cev00rkv8b85ga4mq9ajlnppn9br.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

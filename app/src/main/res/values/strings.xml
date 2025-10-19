@@ -4,6 +4,26 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_login">Login</string>
-    <string name="web_client_id">YOUR_WEB_CLIENT_ID</string>
     <string name="title_settings">Settings</string>
+
+    <!-- Login Screen -->
+    <string name="sign_in_successful">Sign-in successful</string>
+    <string name="sign_in_failed">Sign-in failed</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="google_logo_content_description">Google Logo</string>
+    <string name="sign_in_with_facebook">Sign in with Facebook</string>
+    <string name="facebook_logo_content_description">Facebook Logo</string>
+    <string name="sign_in_with_twitter">Sign in with Twitter</string>
+    <string name="twitter_logo_content_description">Twitter Logo</string>
+    <string name="sign_in_with_email">Sign in with Email</string>
+    <string name="email_sign_in_content_description">Email Sign-in</string>
+    <string name="sign_in_with_phone">Sign in with Phone</string>
+    <string name="phone_sign_in_content_description">Phone Sign-in</string>
+    <string name="sign_in_anonymously">Sign in anonymously</string>
+    <string name="anonymous_sign_in_content_description">Anonymous Sign-in</string>
+    <string name="toggle_theme_content_description">Toggle Theme</string>
+    <string name="title_legal">Terms and Privacy</string>
+    <string name="terms_and_conditions">This is a sample Terms and Conditions page.</string>
+    <string name="privacy_policy">This is a sample Privacy Policy page.</string>
+    <string name="legal_notice">By continuing, you agree to our Terms of Service and Privacy Policy.</string>
 </resources>
