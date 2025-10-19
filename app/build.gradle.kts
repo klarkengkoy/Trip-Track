@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.ui.auth)
     implementation(libs.play.services.auth)
 
     // Coroutines
