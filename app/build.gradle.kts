@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose.compiler)
     alias(libs.plugins.google.gms.services)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -46,15 +48,15 @@ dependencies {
 
     // Core & UI
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
 
     // Lifecycle & Navigation
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.runtime.livedata)
 
     // Google & Firebase Services
     implementation(libs.androidx.credentials)
@@ -62,10 +64,13 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.ui.auth)
-    implementation(libs.play.services.auth)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Coroutines
-    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
     // Compose
@@ -74,13 +79,10 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling)
-    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3) // Do not delete, these are not duplicates
+    implementation(libs.androidx.compose.material3) // Do not delete, these are not duplicates
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.ui.tooling.preview)
-
-    // Accompanist
-    implementation(libs.accompanist.systemuicontroller)
 
     // Testing
     testImplementation(libs.junit)

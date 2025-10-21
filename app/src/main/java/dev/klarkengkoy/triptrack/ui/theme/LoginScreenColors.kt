@@ -7,7 +7,7 @@ data class LoginScreenColors(
     val googleBackgroundColor: Color,
     val googleContentColor: Color,
     val facebookBackgroundColor: Color,
-    val twitterBackgroundColor: Color,
+    val xBackgroundColor: Color,
     val emailBackgroundColor: Color,
     val phoneBackgroundColor: Color,
     val anonymousBackgroundColor: Color

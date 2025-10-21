@@ -1,48 +1,67 @@
 package dev.klarkengkoy.triptrack
 
 import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.WindowCompat
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import dev.klarkengkoy.triptrack.databinding.ActivityMainBinding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint
+import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContent {
+            var useDarkTheme by remember { mutableStateOf(false) }
+            TripTrackTheme(useDarkTheme = useDarkTheme) {
+                val navController = rememberNavController()
+                val items = listOf(
+                    "Home" to R.drawable.ic_home_black_24dp,
+                    "Dashboard" to R.drawable.ic_dashboard_black_24dp,
+                    "Notifications" to R.drawable.ic_notifications_black_24dp,
+                    "Settings" to R.drawable.ic_settings_black_24dp
+                )
 
-        val navView: BottomNavigationView = binding.navView
-
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications, R.id.navigation_settings
-            )
-        )
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
-
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-    }
-
-    fun toggleTheme() {
-        val currentNightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        if (currentNightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-        } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                Scaffold(
+                    bottomBar = {
+                        NavigationBar {
+                            val navBackStackEntry by navController.currentBackStackEntryAsState()
+                            val currentDestination = navBackStackEntry?.destination
+                            items.forEach { (screen, icon) ->
+                                NavigationBarItem(
+                                    icon = { Icon(painterResource(id = icon), contentDescription = null) },
+                                    label = { Text(screen) },
+                                    selected = currentDestination?.route == screen.lowercase(),
+                                    onClick = { navController.navigate(screen.lowercase()) }
+                                )
+                            }
+                        }
+                    }
+                ) { innerPadding ->
+                    MobileNavigation(
+                        navController = navController,
+                        onToggleTheme = { useDarkTheme = !useDarkTheme },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
         }
-        recreate()
     }
 }

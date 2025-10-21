@@ -1,12 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.settings
 
 import android.content.Context
-import android.content.Intent
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,61 +15,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.Fragment
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-import dev.klarkengkoy.triptrack.LoginActivity
-
-class SettingsFragment : Fragment() {
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setContent {
-                SettingsScreen(
-                    onLogoutClick = { logout() },
-                    onDeleteAccountClick = { deleteAccount() }
-                )
-            }
-        }
-    }
-
-    private fun logout() {
-        Firebase.auth.signOut()
-        // Clear user info
-        val sharedPref = activity?.getSharedPreferences("user_prefs", Context.MODE_PRIVATE) ?: return
-        with(sharedPref.edit()) {
-            clear()
-            apply()
-        }
-
-        // Navigate to LoginActivity
-        val intent = Intent(activity, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-    }
-
-    private fun deleteAccount() {
-        val user = Firebase.auth.currentUser!!
-        user.delete()
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Toast.makeText(requireContext(), "Account deleted.", Toast.LENGTH_SHORT).show()
-                    logout()
-                } else {
-                    Toast.makeText(requireContext(), "Failed to delete account.", Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
-}
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
-fun SettingsScreen(onLogoutClick: () -> Unit, onDeleteAccountClick: () -> Unit) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val showDeleteDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
@@ -92,7 +37,7 @@ fun SettingsScreen(onLogoutClick: () -> Unit, onDeleteAccountClick: () -> Unit) 
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = onLogoutClick) {
+        Button(onClick = { viewModel.logout(context) }) {
             Text("Log Out")
         }
 
@@ -112,7 +57,7 @@ fun SettingsScreen(onLogoutClick: () -> Unit, onDeleteAccountClick: () -> Unit) 
                 TextButton(
                     onClick = {
                         showDeleteDialog.value = false
-                        onDeleteAccountClick()
+                        viewModel.deleteAccount(context)
                     }
                 ) {
                     Text("Delete")

@@ -6,12 +6,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
+
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -81,7 +77,7 @@ val LightLoginScreenColors = LoginScreenColors(
     googleBackgroundColor = googleButtonBackgroundColorLight,
     googleContentColor = googleButtonContentColorLight,
     facebookBackgroundColor = facebookButtonBackgroundColor,
-    twitterBackgroundColor = twitterButtonBackgroundColor,
+    xBackgroundColor = xButtonBackgroundColor,
     emailBackgroundColor = emailButtonBackgroundColor,
     phoneBackgroundColor = phoneButtonBackgroundColor,
     anonymousBackgroundColor = anonymousButtonBackgroundColor
@@ -91,7 +87,7 @@ val DarkLoginScreenColors = LoginScreenColors(
     googleBackgroundColor = googleButtonBackgroundColorDark,
     googleContentColor = googleButtonContentColorDark,
     facebookBackgroundColor = facebookButtonBackgroundColor,
-    twitterBackgroundColor = twitterButtonBackgroundColor,
+    xBackgroundColor = xButtonBackgroundColor,
     emailBackgroundColor = emailButtonBackgroundColor,
     phoneBackgroundColor = phoneButtonBackgroundColor,
     anonymousBackgroundColor = anonymousButtonBackgroundColor
@@ -108,14 +104,6 @@ fun TripTrackTheme(
     LightColors
   } else {
     DarkColors
-  }
-
-  val systemUiController = rememberSystemUiController()
-  SideEffect {
-    systemUiController.setSystemBarsColor(
-        color = colors.background,
-        darkIcons = !useDarkTheme
-    )
   }
 
   val loginScreenColors = if (!useDarkTheme) {

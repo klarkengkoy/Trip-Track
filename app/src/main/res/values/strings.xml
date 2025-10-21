@@ -13,8 +13,8 @@
     <string name="google_logo_content_description">Google Logo</string>
     <string name="sign_in_with_facebook">Sign in with Facebook</string>
     <string name="facebook_logo_content_description">Facebook Logo</string>
-    <string name="sign_in_with_twitter">Sign in with Twitter</string>
-    <string name="twitter_logo_content_description">Twitter Logo</string>
+    <string name="sign_in_with_x">Sign in with X</string>
+    <string name="twitter_logo_content_description">X Logo</string>
     <string name="sign_in_with_email">Sign in with Email</string>
     <string name="email_sign_in_content_description">Email Sign-in</string>
     <string name="sign_in_with_phone">Sign in with Phone</string>

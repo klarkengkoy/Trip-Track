@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -17,7 +18,8 @@ sealed class SignInEvent {
     object Error : SignInEvent()
 }
 
-class LoginViewModel : ViewModel() {
+@HiltViewModel
+class LoginViewModel @Inject constructor() : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -48,7 +50,7 @@ class LoginViewModel : ViewModel() {
     fun getGoogleProvider() = AuthUI.IdpConfig.GoogleBuilder().build()
     fun getAnonymousProvider() = AuthUI.IdpConfig.AnonymousBuilder().build()
     fun getFacebookProvider() = AuthUI.IdpConfig.FacebookBuilder().build()
-    fun getTwitterProvider() = AuthUI.IdpConfig.TwitterBuilder().build()
+    fun getXProvider() = AuthUI.IdpConfig.TwitterBuilder().build()
     fun getEmailProvider() = AuthUI.IdpConfig.EmailBuilder().build()
     fun getPhoneProvider() = AuthUI.IdpConfig.PhoneBuilder().build()
 }
