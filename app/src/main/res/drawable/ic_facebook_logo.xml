@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+	android:width="18dp"
+	android:height="18dp"
+	android:viewportWidth="512"
+	android:viewportHeight="512">  <!-- Facebook 'f' logo with correct aspect ratio, centered and not clipped -->
+	<path
+		android:fillColor="#FFFFFF"
+		android:pathData="M333.6,512V309.4h69.7l10.4,-80.9h-80.1v-51.5c0,-23.4 6.5,-39.4 40.1,-39.4l42.9,0V61.1c-7.4,-1 -32.9,-3.1 -62.5,-3.1 -61.8,0 -104.2,37.8 -104.2,107v59.5h-70.1v80.9h70.1V512h83.7Z"/>
+
+</vector>

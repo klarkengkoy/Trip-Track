@@ -6,21 +6,25 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.klarkengkoy.triptrack.ui.dashboard.DashboardScreen
-import dev.klarkengkoy.triptrack.ui.home.HomeScreen
-import dev.klarkengkoy.triptrack.ui.notifications.NotificationsScreen
+import dev.klarkengkoy.triptrack.ui.trips.TripsScreen
+import dev.klarkengkoy.triptrack.ui.media.MediaScreen
+import dev.klarkengkoy.triptrack.ui.maps.MapsScreen
 import dev.klarkengkoy.triptrack.ui.settings.SettingsScreen
 
 @Composable
 fun MobileNavigation(navController: NavHostController, onToggleTheme: () -> Unit, modifier: Modifier = Modifier) {
-    NavHost(navController, startDestination = "home", modifier = modifier) {
-        composable("home") {
-            HomeScreen(onToggleTheme = onToggleTheme)
+    NavHost(navController, startDestination = "trips", modifier = modifier) {
+        composable("trips") {
+            TripsScreen(onToggleTheme = onToggleTheme)
         }
         composable("dashboard") {
             DashboardScreen()
         }
-        composable("notifications") {
-            NotificationsScreen()
+        composable("media") {
+            MediaScreen()
+        }
+        composable("maps") {
+            MapsScreen()
         }
         composable("settings") {
             SettingsScreen()

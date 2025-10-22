@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.home
+package dev.klarkengkoy.triptrack.ui.trips
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,18 +19,17 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dev.klarkengkoy.triptrack.R
 
 @Composable
-fun HomeScreen(
-    homeViewModel: HomeViewModel = hiltViewModel(),
+fun TripsScreen(
+    tripsViewModel: TripsViewModel = hiltViewModel(),
     onToggleTheme: () -> Unit
 ) {
-    val text by homeViewModel.text.observeAsState("")
+    val text by tripsViewModel.text.observeAsState("")
     Box(
         modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.align(Alignment.Center)
-        )
+        Text(text = text)
+
         FloatingActionButton(
             onClick = onToggleTheme,
             modifier = Modifier

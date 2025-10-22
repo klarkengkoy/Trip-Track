@@ -9,25 +9,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -41,22 +39,19 @@ import dev.klarkengkoy.triptrack.R
 @Composable
 fun LoginScreen(
     isLoading: Boolean,
-    onGoogleSignInClick: () -> Unit,
-    onAnonymousSignInClick: () -> Unit,
-    onEmailSignInClick: () -> Unit,
-    onPhoneSignInClick: () -> Unit,
-    onFacebookSignInClick: () -> Unit,
-    onXSignInClick: () -> Unit,
+    signInProviders: List<SignInProvider>,
+    onSignInClick: (SignInType) -> Unit,
     onToggleTheme: () -> Unit,
     onLegalClick: (String) -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding(),
     ) {
         if (isLoading) {
-            // LoadingIndicator(modifier = Modifier.size(128.dp).align(Alignment.Center))
+             LoadingIndicator(modifier = Modifier.size(128.dp).align(Alignment.Center))
         } else {
             Column(
                 modifier = Modifier
@@ -65,58 +60,16 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val buttonModifier = Modifier.fillMaxWidth()
-
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onGoogleSignInClick,
-                    text = stringResource(id = R.string.sign_in_with_google),
-                    backgroundColor = Color.White,
-                    contentColor = Color.Black,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = stringResource(id = R.string.google_logo_content_description),
-                            modifier = Modifier.size(18.dp),
-                            tint = Color.Unspecified
-                        )
-                    }
-                )
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onFacebookSignInClick,
-                    text = stringResource(id = R.string.sign_in_with_facebook),
-                    backgroundColor = Color(0xFF1877F2),
-                    icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.facebook_logo_content_description), modifier = Modifier.size(18.dp)) }
-                )
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onXSignInClick,
-                    text = stringResource(id = R.string.sign_in_with_x),
-                    backgroundColor = Color.Black,
-                    icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.twitter_logo_content_description), modifier = Modifier.size(18.dp)) }
-                )
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onEmailSignInClick,
-                    text = stringResource(id = R.string.sign_in_with_email),
-                    backgroundColor = Color(0xFF7C4DFF),
-                    icon = { Icon(Icons.Default.Email, contentDescription = stringResource(id = R.string.email_sign_in_content_description), modifier = Modifier.size(18.dp)) }
-                )
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onPhoneSignInClick,
-                    text = stringResource(id = R.string.sign_in_with_phone),
-                    backgroundColor = Color(0xFF4CAF50),
-                    icon = { Icon(Icons.Default.Phone, contentDescription = stringResource(id = R.string.phone_sign_in_content_description), modifier = Modifier.size(18.dp)) }
-                )
-                SignInButton(
-                    modifier = buttonModifier,
-                    onClick = onAnonymousSignInClick,
-                    text = stringResource(id = R.string.sign_in_anonymously),
-                    backgroundColor = Color.Gray,
-                    icon = { Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.anonymous_sign_in_content_description), modifier = Modifier.size(18.dp)) }
-                )
+                signInProviders.forEach { provider ->
+                    SignInButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onSignInClick(provider.type) },
+                        text = provider.text,
+                        backgroundColor = provider.backgroundColor,
+                        contentColor = provider.contentColor,
+                        icon = provider.icon
+                    )
+                }
             }
             LegalText(onLegalClick = onLegalClick, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
 

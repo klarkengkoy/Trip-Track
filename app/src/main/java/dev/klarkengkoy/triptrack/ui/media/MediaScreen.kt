@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.notifications
+package dev.klarkengkoy.triptrack.ui.media
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
-fun NotificationsScreen(
-    notificationsViewModel: NotificationsViewModel = hiltViewModel()
+fun MediaScreen(
+    notificationsViewModel: MediaViewModel = hiltViewModel()
 ) {
     val text by notificationsViewModel.text.observeAsState("")
     Box(
