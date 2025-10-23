@@ -15,11 +15,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.R
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -39,8 +43,22 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     private val _signInEvent = MutableSharedFlow<SignInEvent>()
     val signInEvent = _signInEvent.asSharedFlow()
 
+    private val _isUserSignedIn = MutableStateFlow(Firebase.auth.currentUser != null)
+    val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
+
+    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        _isUserSignedIn.value = firebaseAuth.currentUser != null
+        _isLoading.value = false // Stop loading when auth state changes
+    }
+
     init {
         Log.d(TAG, "LoginViewModel initialized")
+        Firebase.auth.addAuthStateListener(authStateListener)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Firebase.auth.removeAuthStateListener(authStateListener)
     }
 
     val signInProviders = listOf(
@@ -109,7 +127,6 @@ class LoginViewModel @Inject constructor() : ViewModel() {
             }
         } else {
             Log.w(TAG, "Sign-in failed or was canceled by user.")
-            _isLoading.value = false
             viewModelScope.launch {
                 Log.d(TAG, "Emitting Error event to UI")
                 _signInEvent.emit(SignInEvent.Error)
