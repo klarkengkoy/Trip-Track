@@ -42,6 +42,9 @@ android {
     kotlin {
         jvmToolchain(11)
     }
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+    }
 }
 
 dependencies {
@@ -83,6 +86,12 @@ dependencies {
     implementation(libs.androidx.compose.material3) // Do not delete, these are not duplicates
     implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling.preview)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // Desugaring
+    coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 
     // Testing
     testImplementation(libs.junit)

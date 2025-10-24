@@ -20,6 +20,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.R
+import dev.klarkengkoy.triptrack.data.UserDataStore
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,12 +31,14 @@ import kotlinx.coroutines.launch
 
 sealed class SignInEvent {
     data class Launch(val providers: List<AuthUI.IdpConfig>) : SignInEvent()
-    object Success : SignInEvent()
-    object Error : SignInEvent()
+    data class Success(val message: String) : SignInEvent()
+    data class Error(val message: String) : SignInEvent()
 }
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val userDataStore: UserDataStore
+) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -84,19 +87,19 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         SignInProvider(
             type = SignInType.EMAIL,
             text = "Sign in with Email",
-            icon = { Icon(imageVector = Icons.Default.Email, contentDescription = "Email", modifier = Modifier.size(18.dp)) },
+            icon = { Icon(imageVector = Icons.Filled.Email, contentDescription = "Email", modifier = Modifier.size(18.dp)) },
             backgroundColor = Color(0xFF7C4DFF)
         ),
         SignInProvider(
             type = SignInType.PHONE,
             text = "Sign in with Phone",
-            icon = { Icon(imageVector = Icons.Default.Phone, contentDescription = "Phone", modifier = Modifier.size(18.dp)) },
+            icon = { Icon(imageVector = Icons.Filled.Phone, contentDescription = "Phone", modifier = Modifier.size(18.dp)) },
             backgroundColor = Color(0xFF4CAF50)
         ),
         SignInProvider(
             type = SignInType.ANONYMOUS,
             text = "Sign in anonymously",
-            icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Anonymous", modifier = Modifier.size(18.dp)) },
+            icon = { Icon(imageVector = Icons.Filled.Person, contentDescription = "Anonymous", modifier = Modifier.size(18.dp)) },
             backgroundColor = Color.Gray
         )
     )
@@ -122,14 +125,18 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         Log.d(TAG, "onSignInResult received with code: ${result.resultCode}")
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             viewModelScope.launch {
-                Log.d(TAG, "Emitting Success event to UI")
-                _signInEvent.emit(SignInEvent.Success)
+                val user = Firebase.auth.currentUser
+                if (user != null) {
+                    userDataStore.saveUser(user.displayName ?: "", user.email ?: "")
+                }
+                val message = if (user?.displayName != null) "Welcome, ${user.displayName}" else "Sign-in successful"
+                _signInEvent.emit(SignInEvent.Success(message))
             }
         } else {
             Log.w(TAG, "Sign-in failed or was canceled by user.")
             viewModelScope.launch {
                 Log.d(TAG, "Emitting Error event to UI")
-                _signInEvent.emit(SignInEvent.Error)
+                _signInEvent.emit(SignInEvent.Error("Sign-in failed"))
             }
         }
     }

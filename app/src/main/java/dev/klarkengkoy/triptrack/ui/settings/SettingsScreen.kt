@@ -11,6 +11,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -23,9 +25,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val showDeleteDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-    val userName = sharedPref.getString("user_name", "")
-    val userEmail = sharedPref.getString("user_email", "")
+    val userName by viewModel.userNameFlow.collectAsState(initial = "")
+    val userEmail by viewModel.userEmailFlow.collectAsState(initial = "")
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -37,7 +38,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = { viewModel.logout(context) }) {
+        Button(onClick = { viewModel.logout() }) {
             Text("Log Out")
         }
 

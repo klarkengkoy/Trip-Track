@@ -3,21 +3,26 @@ package dev.klarkengkoy.triptrack.ui.settings
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.klarkengkoy.triptrack.data.UserDataStore
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor() : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val userDataStore: UserDataStore
+) : ViewModel() {
 
-    fun logout(context: Context) {
-        Firebase.auth.signOut()
-        // Clear user info
-        val sharedPref = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-        with(sharedPref.edit()) {
-            clear()
-            apply()
+    val userNameFlow = userDataStore.userNameFlow
+    val userEmailFlow = userDataStore.userEmailFlow
+
+    fun logout() {
+        viewModelScope.launch {
+            userDataStore.clear()
+            Firebase.auth.signOut()
         }
     }
 
@@ -27,7 +32,7 @@ class SettingsViewModel @Inject constructor() : ViewModel() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Toast.makeText(context, "Account deleted.", Toast.LENGTH_SHORT).show()
-                    logout(context)
+                    logout()
                 } else {
                     Toast.makeText(context, "Failed to delete account.", Toast.LENGTH_SHORT).show()
                 }

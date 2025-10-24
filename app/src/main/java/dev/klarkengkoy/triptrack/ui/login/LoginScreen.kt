@@ -12,13 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,14 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import dev.klarkengkoy.triptrack.R
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -41,7 +35,6 @@ fun LoginScreen(
     isLoading: Boolean,
     signInProviders: List<SignInProvider>,
     onSignInClick: (SignInType) -> Unit,
-    onToggleTheme: () -> Unit,
     onLegalClick: (String) -> Unit
 ) {
     Box(
@@ -72,15 +65,6 @@ fun LoginScreen(
                 }
             }
             LegalText(onLegalClick = onLegalClick, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
-
-            FloatingActionButton(
-                onClick = onToggleTheme,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Filled.Palette, contentDescription = stringResource(id = R.string.toggle_theme_content_description))
-            }
         }
     }
 }

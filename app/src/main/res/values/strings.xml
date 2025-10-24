@@ -26,4 +26,7 @@
     <string name="terms_and_conditions">This is a sample Terms and Conditions page.</string>
     <string name="privacy_policy">This is a sample Privacy Policy page.</string>
     <string name="legal_notice">By continuing, you agree to our Terms of Service and Privacy Policy.</string>
+
+    <!-- Trips Screen -->
+    <string name="add">Add</string>
 </resources>
