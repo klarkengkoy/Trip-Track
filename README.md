@@ -1,4 +1,4 @@
-# TripTrack
+# TripTrack (Work in Progress)
 
 TripTrack is a comprehensive travel logging application for Android, designed to help users seamlessly record and manage their trips.  
 Built with **Kotlin** and the **MVVM (Model-View-ViewModel)** architecture, the app is scalable, testable, and maintainable. It leverages the latest **Jetpack** libraries to provide a robust and intuitive user experience.
