@@ -11,7 +11,7 @@ Built with **Kotlin** and the **MVVM (Model-View-ViewModel)** architecture, the 
   A fully declarative UI built with **Jetpack Compose**, featuring a clean design that reacts to state changes from the ViewModel.
 
 - **Efficient Asynchronous Operations**  
-  All background tasks—such as network calls and data handling—are managed efficiently using **Kotlin Coroutines** to ensure a smooth and responsive user experience without blocking the main thread.
+  All background tasks such as network calls and data handling, are managed efficiently using **Kotlin Coroutines** to ensure a smooth and responsive user experience without blocking the main thread.
 
 - **Flexible Authentication**  
   Secure user sign-in and registration using **Firebase Authentication**, with support for multiple providers including **Google**, **Facebook**, and **Email**.
