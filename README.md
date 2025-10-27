@@ -19,8 +19,6 @@ Built with **Kotlin** and the **MVVM (Model-View-ViewModel)** architecture, the 
 - **Real-time Data Sync**  
   Trip data is stored and synchronized in real-time using **Cloud Firestore**, allowing for a consistent experience across devices.
 
-- **User-Centric Design**  
-  Includes features like a dynamic **light/dark theme toggle** and clear navigation, prioritizing user comfort and accessibility.
 
 ---
 
