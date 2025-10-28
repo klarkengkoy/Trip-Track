@@ -3,15 +3,25 @@ package dev.klarkengkoy.triptrack
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import dev.klarkengkoy.triptrack.ui.dashboard.DashboardScreen
-import dev.klarkengkoy.triptrack.ui.media.MediaScreen
 import dev.klarkengkoy.triptrack.ui.maps.MapsScreen
+import dev.klarkengkoy.triptrack.ui.media.MediaScreen
 import dev.klarkengkoy.triptrack.ui.settings.SettingsScreen
+import dev.klarkengkoy.triptrack.ui.trips.AddTransactionScreen
 import dev.klarkengkoy.triptrack.ui.trips.TripsScreen
+import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripCurrencyScreen
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripDatesScreen
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripNameScreen
+
+const val ADD_TRIP_ROUTE = "addTrip"
 
 @Composable
 fun MainNavigation(
@@ -21,7 +31,11 @@ fun MainNavigation(
 ) {
     NavHost(navController, startDestination = "trips", modifier = modifier) {
         composable("trips") {
-            TripsScreen(modifier = Modifier.padding(innerPadding))
+            TripsScreen(
+                modifier = Modifier.padding(innerPadding),
+                onAddTrip = { navController.navigate(ADD_TRIP_ROUTE) },
+                onAddTransaction = { tripId -> navController.navigate("addTransaction/$tripId") }
+            )
         }
         composable("dashboard") {
             DashboardScreen()
@@ -34,6 +48,37 @@ fun MainNavigation(
         }
         composable("settings") {
             SettingsScreen()
+        }
+        navigation(startDestination = "addTripName", route = ADD_TRIP_ROUTE) {
+            composable("addTripName") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripNameScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateNext = { navController.navigate("addTripDates") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripDates") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripDatesScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateNext = { navController.navigate("addTripCurrency") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripCurrency") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripCurrencyScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onCurrencySelected = { /* TODO: Navigate to budget screen */ }
+                )
+            }
+        }
+        composable("addTransaction/{tripId}") {
+            AddTransactionScreen()
         }
     }
 }

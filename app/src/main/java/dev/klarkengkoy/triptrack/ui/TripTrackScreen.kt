@@ -1,5 +1,8 @@
 package dev.klarkengkoy.triptrack.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -12,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.klarkengkoy.triptrack.LoginNavigation
 import dev.klarkengkoy.triptrack.MainNavigation
@@ -32,6 +36,7 @@ fun TripTrackScreen(
     if (isSignedIn) {
         TripTrackTheme {
             val navController = rememberNavController()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
 
             val bottomNavItems = listOf(
                 BottomNavItem("trips", R.drawable.travel_luggage_and_bags_24px, "Trips"),
@@ -41,14 +46,22 @@ fun TripTrackScreen(
                 BottomNavItem("settings", R.drawable.settings_24px, "Settings")
             )
 
+            val shouldShowBottomNav = bottomNavItems.any { it.route == navBackStackEntry?.destination?.route }
+
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 bottomBar = {
-                    BottomNavigationBar(
-                        navController = navController,
-                        items = bottomNavItems,
-                    )
+                    AnimatedVisibility(
+                        visible = shouldShowBottomNav,
+                        enter = slideInVertically(initialOffsetY = { it }),
+                        exit = slideOutVertically(targetOffsetY = { it })
+                    ) {
+                        BottomNavigationBar(
+                            navController = navController,
+                            items = bottomNavItems,
+                        )
+                    }
                 }
             ) { innerPadding ->
                 MainNavigation(

@@ -16,18 +16,18 @@ data class Coordinates(
 
 data class Category(
     val name: String,
-    @DrawableRes val iconRes: Int
+    @field:DrawableRes val iconRes: Int
 )
 
 data class PaymentMethod(
     val name: String,
-    @DrawableRes val iconRes: Int
+    @field:DrawableRes val iconRes: Int
 )
 
 data class Transaction(
     val id: String = UUID.randomUUID().toString(),
     val tripId: String,
-    val notes: String,
+    val notes: String?,
     val amount: Double,
     val date: LocalDate,
     val category: Category,

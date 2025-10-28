@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 data class TripsUiState(
@@ -20,12 +22,21 @@ data class TripsUiState(
     val selectedTrip: Trip? = null,
     val trips: List<Trip> = emptyList(),
     // A map of all transactions, keyed by the ID of the trip they belong to.
-    val transactionsByTrip: Map<String, List<Transaction>> = emptyMap()
+    val transactionsByTrip: Map<String, List<Transaction>> = emptyMap(),
+    val addTripUiState: AddTripUiState = AddTripUiState()
 ) {
     // Computed property to get the transactions for the currently selected trip.
     val selectedTripTransactions: List<Transaction>
         get() = selectedTrip?.let { transactionsByTrip[it.id] }.orEmpty()
 }
+
+data class AddTripUiState(
+    val tripName: String = "",
+    val imageUri: String? = null,
+    val startDate: Long? = null,
+    val endDate: Long? = null,
+    val currency: String = "",
+)
 
 @HiltViewModel
 class TripsViewModel @Inject constructor() : ViewModel() {
@@ -35,6 +46,45 @@ class TripsViewModel @Inject constructor() : ViewModel() {
 
     init {
         loadMockData()
+    }
+
+    fun onTripNameChanged(newName: String) {
+        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(tripName = newName)) }
+    }
+
+    fun onImageUriChanged(newImageUri: String?) {
+        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(imageUri = newImageUri)) }
+    }
+
+    fun onDatesChanged(startDate: Long?, endDate: Long?) {
+        _uiState.update {
+            it.copy(
+                addTripUiState = it.addTripUiState.copy(
+                    startDate = startDate,
+                    endDate = endDate
+                )
+            )
+        }
+    }
+
+    fun onCurrencyChanged(newCurrency: String) {
+        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(currency = newCurrency)) }
+    }
+
+    fun addTrip() {
+        val newTrip = Trip(
+            name = _uiState.value.addTripUiState.tripName,
+            currency = _uiState.value.addTripUiState.currency,
+            imageUri = _uiState.value.addTripUiState.imageUri,
+            startDate = _uiState.value.addTripUiState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+            endDate = _uiState.value.addTripUiState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+        )
+        _uiState.update {
+            it.copy(
+                trips = it.trips + newTrip,
+                addTripUiState = AddTripUiState() // Reset the form
+            )
+        }
     }
 
     /**
@@ -66,9 +116,7 @@ class TripsViewModel @Inject constructor() : ViewModel() {
             currency = "JPY",
             startDate = LocalDate.now().minusDays(2),
             totalBudget = 200000.0,
-            // The 'isActive' flag is no longer used to determine the selected trip.
-            // A trip is considered "active" in the UI simply by being in the 'selectedTrip' state.
-            isActive = true
+            isActive = false
         )
         val seoulTrip = Trip(
             name = "Seoul Searching",
@@ -89,7 +137,7 @@ class TripsViewModel @Inject constructor() : ViewModel() {
         val tokyoTransactions = listOf(
             Transaction(
                 tripId = tokyoTrip.id,
-                notes = "Train from Narita Airport",
+                notes = null,
                 amount = 3200.0,
                 date = LocalDate.now().minusDays(2),
                 category = transportCategory,
@@ -141,9 +189,7 @@ class TripsViewModel @Inject constructor() : ViewModel() {
         )
 
         _uiState.value = TripsUiState(
-            // For now, we'll keep the Tokyo trip selected by default to maintain the UI state.
-            // In a real app, this would likely be null initially.
-            selectedTrip = tokyoTrip,
+            selectedTrip = null,
             trips = listOf(tokyoTrip, seoulTrip, baliTrip),
             transactionsByTrip = mapOf(
                 tokyoTrip.id to tokyoTransactions,
