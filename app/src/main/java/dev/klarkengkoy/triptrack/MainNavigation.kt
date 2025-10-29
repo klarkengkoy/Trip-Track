@@ -20,6 +20,7 @@ import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripCurrencyScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripDatesScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripNameScreen
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.CurrencyListScreen
 
 const val ADD_TRIP_ROUTE = "addTrip"
 
@@ -55,15 +56,6 @@ fun MainNavigation(
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripNameScreen(
                     onNavigateUp = { navController.navigateUp() },
-                    onNavigateNext = { navController.navigate("addTripDates") },
-                    viewModel = viewModel
-                )
-            }
-            composable("addTripDates") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-                AddTripDatesScreen(
-                    onNavigateUp = { navController.navigateUp() },
                     onNavigateNext = { navController.navigate("addTripCurrency") },
                     viewModel = viewModel
                 )
@@ -73,7 +65,29 @@ fun MainNavigation(
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripCurrencyScreen(
                     onNavigateUp = { navController.navigateUp() },
-                    onCurrencySelected = { /* TODO: Navigate to budget screen */ }
+                    onNavigateNext = { navController.navigate("addTripDates") },
+                    onCurrencyClick = { navController.navigate("currencyList") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripDates") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripDatesScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateNext = { /* TODO: Navigate to budget screen */ },
+                    viewModel = viewModel
+                )
+            }
+            composable("currencyList") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                CurrencyListScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onCurrencySelected = {
+                        viewModel.onCurrencyChanged(it)
+                        navController.navigateUp()
+                    }
                 )
             }
         }
