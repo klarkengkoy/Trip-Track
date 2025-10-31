@@ -29,4 +29,9 @@
 
     <!-- Trips Screen -->
     <string name="add">Add</string>
+
+    <!-- Add Trip -->
+    <string name="add_trip_summary_title">Review your trip</string>
+    <string name="cd_navigate_up">Navigate up</string>
+    <string name="cd_save_trip">Save trip</string>
 </resources>

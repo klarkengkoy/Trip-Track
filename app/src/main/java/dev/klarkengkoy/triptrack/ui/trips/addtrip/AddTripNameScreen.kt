@@ -14,22 +14,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,10 +53,7 @@ fun AddTripNameScreen(
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -74,6 +68,7 @@ fun AddTripNameScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripNameContent(
     modifier: Modifier = Modifier,
@@ -99,18 +94,11 @@ private fun AddTripNameContent(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                tonalElevation = 1.dp,
-                shape = MaterialTheme.shapes.large
-            ) {
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 BasicTextField(
                     value = name,
                     onValueChange = onNameChanged,
-                    textStyle = MaterialTheme.typography.titleLarge.copy(
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
+                    textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     decorationBox = { innerTextField ->
@@ -134,14 +122,11 @@ private fun AddTripNameContent(
                 )
             }
 
-
-            // Image Placeholder
-            Card(
+            ElevatedCard(
+                onClick = onAddImageClicked,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .clickable { onAddImageClicked() },
-                shape = MaterialTheme.shapes.large
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),

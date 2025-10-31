@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.ui.auth)
+    implementation(libs.firebase.firestore)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -87,7 +88,10 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling.preview)
 
-    // DataStore
+    // Data & Database
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
 
     // Desugaring

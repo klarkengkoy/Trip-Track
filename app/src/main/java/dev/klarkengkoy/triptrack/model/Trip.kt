@@ -1,9 +1,13 @@
 package dev.klarkengkoy.triptrack.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.time.LocalDate
 import java.util.UUID
 
+@Entity(tableName = "trips")
 data class Trip(
+    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val currency: String,

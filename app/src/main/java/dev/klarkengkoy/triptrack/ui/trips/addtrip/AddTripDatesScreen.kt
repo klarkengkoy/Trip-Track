@@ -4,28 +4,26 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -82,7 +80,10 @@ fun AddTripDatesScreen(
     // Reactively update the ViewModel and close the sheet when a date range is selected
     LaunchedEffect(dateRangePickerState.selectedEndDateMillis) {
         dateRangePickerState.selectedEndDateMillis?.let {
-            Log.d(TAG, "Picker selection changed: startDate=${dateRangePickerState.selectedStartDateMillis}, endDate=${it}")
+            Log.d(
+                TAG,
+                "Picker selection changed: startDate=${dateRangePickerState.selectedStartDateMillis}, endDate=${it}"
+            )
             viewModel.onDatesChanged(
                 dateRangePickerState.selectedStartDateMillis,
                 it
@@ -106,10 +107,7 @@ fun AddTripDatesScreen(
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
+                }
             )
         }
     ) { paddingValues ->
@@ -119,7 +117,10 @@ fun AddTripDatesScreen(
             endDateMillis = uiState.addTripUiState.endDate,
             onAddDatesClicked = { showBottomSheet = true },
             onNextClicked = onNavigateNext,
-            onSkipClicked = onNavigateNext // Both skip and next go to the same place
+            onSkipClicked = {
+                viewModel.onDatesChanged(null, null) // Clear the dates
+                onNavigateNext()                     // Then navigate
+            }
         )
     }
 
@@ -133,6 +134,7 @@ fun AddTripDatesScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripDatesContent(
     modifier: Modifier = Modifier,
@@ -146,49 +148,55 @@ private fun AddTripDatesContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .padding(top = 80.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (startDateMillis != null && endDateMillis != null) {
-                Text(
-                    text = "Your selected dates:",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-                Surface(
-                    tonalElevation = 1.dp,
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        ListItem(
-                            headlineContent = { Text("Start", style = MaterialTheme.typography.titleLarge) },
-                            trailingContent = { Text(formatDate(startDateMillis), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
-                            modifier = Modifier.clickable { onAddDatesClicked() }
-                        )
-                        ListItem(
-                            headlineContent = { Text("End", style = MaterialTheme.typography.titleLarge) },
-                            trailingContent = { Text(formatDate(endDateMillis), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
-                            modifier = Modifier.clickable { onAddDatesClicked() }
-                        )
-                    }
-                }
+            Text(
+                text = if (startDateMillis != null) "Your selected dates:" else "Include travel dates?",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+            )
 
-            } else {
-                Text(
-                    text = "Include travel dates?",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                OutlinedButton(
+            if (startDateMillis != null && endDateMillis != null) {
+                ElevatedCard(
                     onClick = onAddDatesClicked,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Yes, add dates")
+                    Column {
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            headlineContent = { Text("Start", style = MaterialTheme.typography.bodyLarge) },
+                            trailingContent = { Text(formatDate(startDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
+                        )
+                        HorizontalDivider()
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            headlineContent = { Text("End", style = MaterialTheme.typography.bodyLarge) },
+                            trailingContent = { Text(formatDate(endDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
+                        )
+                    }
+                }
+            } else {
+                ElevatedCard(
+                    onClick = onAddDatesClicked,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = "Yes, add dates",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -208,8 +216,8 @@ private fun AddTripDatesContent(
                 ) {
                     Text("Next")
                 }
-                TextButton(onClick = onAddDatesClicked) {
-                    Text("Change dates")
+                TextButton(onClick = onSkipClicked) {
+                    Text("Skip for now")
                 }
             } else {
                 TextButton(onClick = onSkipClicked) {
@@ -226,8 +234,7 @@ private fun formatDate(millis: Long): String {
     return formatter.format(instant)
 }
 
-
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "No Dates Selected")
 @Composable
 private fun AddTripDatesScreenPreview_NoDates() {
     TripTrackTheme {
@@ -241,7 +248,7 @@ private fun AddTripDatesScreenPreview_NoDates() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Dates Selected")
 @Composable
 private fun AddTripDatesScreenPreview_WithDates() {
     TripTrackTheme {

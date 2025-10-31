@@ -17,9 +17,11 @@ import dev.klarkengkoy.triptrack.ui.settings.SettingsScreen
 import dev.klarkengkoy.triptrack.ui.trips.AddTransactionScreen
 import dev.klarkengkoy.triptrack.ui.trips.TripsScreen
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripBudgetScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripCurrencyScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripDatesScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripNameScreen
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripSummaryScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.CurrencyListScreen
 
 const val ADD_TRIP_ROUTE = "addTrip"
@@ -75,7 +77,30 @@ fun MainNavigation(
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripDatesScreen(
                     onNavigateUp = { navController.navigateUp() },
-                    onNavigateNext = { /* TODO: Navigate to budget screen */ },
+                    onNavigateNext = { navController.navigate("addTripBudget") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripBudget") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripBudgetScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateNext = { navController.navigate("addTripSummary") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripSummary") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripSummaryScreen(
+                    onNavigateUp = { navController.navigateUp() },
+                    onSaveTrip = {
+                        viewModel.addTrip()
+                        navController.navigate("trips") {
+                            popUpTo(ADD_TRIP_ROUTE) { inclusive = true }
+                        }
+                    },
                     viewModel = viewModel
                 )
             }
