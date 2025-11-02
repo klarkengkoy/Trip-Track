@@ -23,7 +23,7 @@ class UserDataStore(context: Context) {
     suspend fun saveUser(name: String, email: String) {
         dataStore.edit { preferences ->
             // Elvis operator to handle null name from some providers
-            preferences[USER_NAME_KEY] = name ?: ""
+            preferences[USER_NAME_KEY] = name
             preferences[USER_EMAIL_KEY] = email
         }
     }

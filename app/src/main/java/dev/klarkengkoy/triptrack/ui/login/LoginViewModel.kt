@@ -21,6 +21,7 @@ import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.data.UserDataStore
+import dev.klarkengkoy.triptrack.data.repository.TripsRepository
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,8 @@ sealed class SignInEvent {
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val userDataStore: UserDataStore
+    private val userDataStore: UserDataStore,
+    private val tripsRepository: TripsRepository
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -125,6 +127,9 @@ class LoginViewModel @Inject constructor(
         Log.d(TAG, "onSignInResult received with code: ${result.resultCode}")
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             viewModelScope.launch {
+                // Sync trips from Firestore to Room
+                tripsRepository.syncTrips()
+
                 val user = Firebase.auth.currentUser
                 if (user != null) {
                     userDataStore.saveUser(user.displayName ?: "", user.email ?: "")

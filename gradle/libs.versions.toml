@@ -28,6 +28,7 @@ googleid = "1.1.1"
 firebaseAuth = "23.2.1"
 firebaseUiAuth = "9.1.1"
 firebaseFirestore = "25.1.4"
+playServicesCoroutines = "1.10.2"
 
 # Coroutines
 coroutines = "1.10.2"
@@ -74,6 +75,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx", ver
 firebase-ui-auth = { group = "com.firebaseui", name = "firebase-ui-auth", version.ref = "firebaseUiAuth" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "playServicesCoroutines" }
 
 
 # Coroutines

@@ -10,8 +10,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TripDao {
 
-    @Query("SELECT * FROM trips ORDER BY startDate DESC")
+    @Query("SELECT * FROM trips WHERE isDeleted = 0 ORDER BY startDate DESC")
     fun getTrips(): Flow<List<Trip>>
+
+    @Query("SELECT * FROM trips WHERE isDeleted = 1")
+    suspend fun getDeletedTrips(): List<Trip>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrip(trip: Trip)

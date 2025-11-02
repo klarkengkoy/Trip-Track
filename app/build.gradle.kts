@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.ui.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Hilt
     implementation(libs.hilt.android)
