@@ -1,7 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.trips.addtrip
 
 import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,21 +19,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,9 +54,7 @@ fun AddTripDatesScreen(
     viewModel: TripsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val sheetState = rememberModalBottomSheetState()
-    val scope = rememberCoroutineScope()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    val (showDatePicker, setShowDatePicker) = remember { mutableStateOf(false) }
     val dateRangePickerState = rememberDateRangePickerState(
         initialSelectedStartDateMillis = uiState.addTripUiState.startDate,
         initialSelectedEndDateMillis = uiState.addTripUiState.endDate
@@ -74,27 +67,6 @@ fun AddTripDatesScreen(
                 startDateMillis = uiState.addTripUiState.startDate,
                 endDateMillis = uiState.addTripUiState.endDate
             )
-        }
-    }
-
-    // Reactively update the ViewModel and close the sheet when a date range is selected
-    LaunchedEffect(dateRangePickerState.selectedEndDateMillis) {
-        dateRangePickerState.selectedEndDateMillis?.let {
-            Log.d(
-                TAG,
-                "Picker selection changed: startDate=${dateRangePickerState.selectedStartDateMillis}, endDate=${it}"
-            )
-            viewModel.onDatesChanged(
-                dateRangePickerState.selectedStartDateMillis,
-                it
-            )
-            scope.launch {
-                sheetState.hide()
-            }.invokeOnCompletion {
-                if (!sheetState.isVisible) {
-                    showBottomSheet = false
-                }
-            }
         }
     }
 
@@ -115,7 +87,7 @@ fun AddTripDatesScreen(
             modifier = Modifier.padding(paddingValues),
             startDateMillis = uiState.addTripUiState.startDate,
             endDateMillis = uiState.addTripUiState.endDate,
-            onAddDatesClicked = { showBottomSheet = true },
+            onAddDatesClicked = { setShowDatePicker(true) },
             onNextClicked = onNavigateNext,
             onSkipClicked = {
                 viewModel.onDatesChanged(null, null) // Clear the dates
@@ -124,17 +96,59 @@ fun AddTripDatesScreen(
         )
     }
 
-    if (showBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showBottomSheet = false },
-            sheetState = sheetState
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { setShowDatePicker(false) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        dateRangePickerState.selectedEndDateMillis?.let {
+                            Log.d(
+                                TAG,
+                                "Picker selection changed: startDate=${dateRangePickerState.selectedStartDateMillis}, endDate=${it}"
+                            )
+                            viewModel.onDatesChanged(
+                                dateRangePickerState.selectedStartDateMillis,
+                                it
+                            )
+                        }
+                        setShowDatePicker(false)
+                    },
+                    enabled = dateRangePickerState.selectedEndDateMillis != null
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        setShowDatePicker(false)
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
         ) {
-            DateRangePicker(state = dateRangePickerState, title = null)
+            DateRangePicker(
+                state = dateRangePickerState,
+                title = null,
+                headline = {
+                    val startDate = dateRangePickerState.selectedStartDateMillis
+                    val endDate = dateRangePickerState.selectedEndDateMillis
+                    val startDateText = if (startDate != null) formatDate(startDate) else "Start"
+                    val endDateText = if (endDate != null) formatDate(endDate) else "End"
+
+                    Text(
+                        text = "$startDateText - $endDateText",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp)
+                    )
+                }
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripDatesContent(
     modifier: Modifier = Modifier,

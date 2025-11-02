@@ -21,6 +21,7 @@ import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripBudgetScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripCurrencyScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripDatesScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripNameScreen
+import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripPhotoScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.AddTripSummaryScreen
 import dev.klarkengkoy.triptrack.ui.trips.addtrip.CurrencyListScreen
 
@@ -86,6 +87,15 @@ fun MainNavigation(
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripBudgetScreen(
                     onNavigateUp = { navController.navigateUp() },
+                    onNavigateNext = { navController.navigate("addTripPhoto") },
+                    viewModel = viewModel
+                )
+            }
+            composable("addTripPhoto") {
+                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+                val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
+                AddTripPhotoScreen(
+                    onNavigateUp = { navController.navigateUp() },
                     onNavigateNext = { navController.navigate("addTripSummary") },
                     viewModel = viewModel
                 )
@@ -97,6 +107,11 @@ fun MainNavigation(
                     onNavigateUp = { navController.navigateUp() },
                     onSaveTrip = {
                         viewModel.addTrip()
+                        navController.navigate("trips") {
+                            popUpTo(ADD_TRIP_ROUTE) { inclusive = true }
+                        }
+                    },
+                    onDiscard = {
                         navController.navigate("trips") {
                             popUpTo(ADD_TRIP_ROUTE) { inclusive = true }
                         }

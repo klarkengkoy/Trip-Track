@@ -12,6 +12,8 @@ data class Trip(
     val name: String,
     val currency: String,
     val imageUri: String? = null,
+    val imageOffsetX: Float = 0f,
+    val imageOffsetY: Float = 0f,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
     val dailyBudget: Double? = null,

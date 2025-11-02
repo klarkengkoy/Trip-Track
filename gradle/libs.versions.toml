@@ -42,6 +42,9 @@ material3Expressive = "1.5.0-alpha07"
 datastore = "1.1.7"
 room = "2.8.3"
 
+# Image Loading
+coil = "2.7.0"
+
 # Desugaring
 desugar = "2.1.5"
 
@@ -98,6 +101,9 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Image Loading
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 # Desugaring
 android-desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar" }

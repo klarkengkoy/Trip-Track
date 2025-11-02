@@ -1,6 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.settings
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

@@ -1,18 +1,14 @@
 package dev.klarkengkoy.triptrack.ui.trips.addtrip
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,22 +56,17 @@ fun AddTripNameScreen(
         AddTripNameContent(
             modifier = Modifier.padding(paddingValues),
             name = uiState.addTripUiState.tripName,
-            imageUri = uiState.addTripUiState.imageUri,
             onNameChanged = { viewModel.onTripNameChanged(it) },
-            onAddImageClicked = { /* TODO: Implement image picking */ },
             onNextClicked = onNavigateNext
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripNameContent(
     modifier: Modifier = Modifier,
     name: String,
-    imageUri: String?,
     onNameChanged: (String) -> Unit,
-    onAddImageClicked: () -> Unit,
     onNextClicked: () -> Unit
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -121,36 +112,6 @@ private fun AddTripNameContent(
                     }
                 )
             }
-
-            ElevatedCard(
-                onClick = onAddImageClicked,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // TODO: Show selected image if imageUri is not null
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AddAPhoto,
-                            contentDescription = "Add a photo",
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Add a cover photo",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
         }
 
         Button(
@@ -172,9 +133,7 @@ private fun AddTripNameScreenPreview() {
     TripTrackTheme {
         AddTripNameContent(
             name = "",
-            imageUri = null,
             onNameChanged = {},
-            onAddImageClicked = {},
             onNextClicked = {}
         )
     }
@@ -186,9 +145,7 @@ private fun AddTripNameScreenPreview_WithName() {
     TripTrackTheme {
         AddTripNameContent(
             name = "Trip to Japan",
-            imageUri = null,
             onNameChanged = {},
-            onAddImageClicked = {},
             onNextClicked = {}
         )
     }

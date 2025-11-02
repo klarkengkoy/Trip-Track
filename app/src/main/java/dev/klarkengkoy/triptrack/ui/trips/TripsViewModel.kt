@@ -31,6 +31,8 @@ data class TripsUiState(
 data class AddTripUiState(
     val tripName: String = "",
     val imageUri: String? = null,
+    val imageOffsetX: Float = 0f,
+    val imageOffsetY: Float = 0f,
     val startDate: Long? = null,
     val endDate: Long? = null,
     val currency: String = "",
@@ -60,6 +62,17 @@ class TripsViewModel @Inject constructor(
 
     fun onImageUriChanged(newImageUri: String?) {
         _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(imageUri = newImageUri)) }
+    }
+
+    fun onImageOffsetChanged(x: Float, y: Float) {
+        _uiState.update {
+            it.copy(
+                addTripUiState = it.addTripUiState.copy(
+                    imageOffsetX = x,
+                    imageOffsetY = y
+                )
+            )
+        }
     }
 
     fun onDatesChanged(startDate: Long?, endDate: Long?) {
@@ -133,6 +146,8 @@ class TripsViewModel @Inject constructor(
                 name = _uiState.value.addTripUiState.tripName,
                 currency = _uiState.value.addTripUiState.currency,
                 imageUri = _uiState.value.addTripUiState.imageUri,
+                imageOffsetX = _uiState.value.addTripUiState.imageOffsetX,
+                imageOffsetY = _uiState.value.addTripUiState.imageOffsetY,
                 startDate = _uiState.value.addTripUiState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
                 endDate = _uiState.value.addTripUiState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
                 totalBudget = _uiState.value.addTripUiState.totalBudget,

@@ -24,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Trip Track"
 include(":app")
- 

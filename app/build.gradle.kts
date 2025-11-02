@@ -95,6 +95,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
 
+    // Image Loading
+    implementation(libs.coil.compose)
+
     // Desugaring
     coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 

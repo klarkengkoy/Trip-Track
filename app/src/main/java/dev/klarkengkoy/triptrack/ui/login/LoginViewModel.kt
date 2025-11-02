@@ -22,13 +22,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.data.UserDataStore
 import dev.klarkengkoy.triptrack.data.repository.TripsRepository
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class SignInEvent {
     data class Launch(val providers: List<AuthUI.IdpConfig>) : SignInEvent()

@@ -1,14 +1,17 @@
 package dev.klarkengkoy.triptrack.ui.trips.addtrip
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -19,6 +22,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,11 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
@@ -47,6 +54,7 @@ import java.util.Currency
 fun AddTripSummaryScreen(
     onNavigateUp: () -> Unit,
     onSaveTrip: () -> Unit,
+    onDiscard: () -> Unit,
     viewModel: TripsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -54,7 +62,8 @@ fun AddTripSummaryScreen(
     AddTripSummaryContent(
         addTripUiState = uiState.addTripUiState,
         onNavigateUp = onNavigateUp,
-        onSaveTrip = onSaveTrip
+        onSaveTrip = onSaveTrip,
+        onDiscard = onDiscard
     )
 }
 
@@ -64,7 +73,8 @@ private fun AddTripSummaryContent(
     modifier: Modifier = Modifier,
     addTripUiState: AddTripUiState,
     onNavigateUp: () -> Unit,
-    onSaveTrip: () -> Unit
+    onSaveTrip: () -> Unit,
+    onDiscard: () -> Unit
 ) {
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
@@ -147,8 +157,63 @@ private fun AddTripSummaryContent(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
+                if (addTripUiState.imageUri != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AsyncImage(
+                                model = addTripUiState.imageUri,
+                                contentDescription = "Cover photo for ${addTripUiState.tripName}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            // Scrim for text readability
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                            startY = 300f
+                                        )
+                                    )
+                            )
+                            // Content
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.BottomStart)
+                            ) {
+                                val dateRange = if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
+                                    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                                    val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                    val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                    "${start.format(formatter)} - ${end.format(formatter)}"
+                                } else {
+                                    "No dates set"
+                                }
+
+                                Text(
+                                    text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = dateRange,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+
                 if (summaryItems.isNotEmpty()) {
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    ElevatedCard(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
                         Column {
                             summaryItems.forEachIndexed { index, (label, value) ->
                                 SummaryListItem(label = label, value = value)
@@ -161,15 +226,23 @@ private fun AddTripSummaryContent(
                 }
             }
 
-            Button(
-                onClick = onSaveTrip,
-                enabled = addTripUiState.tripName.isNotBlank(), // Button is enabled only if there's a trip name
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
                     .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Save Trip")
+                Button(
+                    onClick = onSaveTrip,
+                    enabled = addTripUiState.tripName.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Save Trip")
+                }
+                TextButton(onClick = onDiscard) {
+                    Text("Discard")
+                }
             }
         }
     }
@@ -206,10 +279,12 @@ private fun AddTripSummaryScreenPreview_Full() {
                 startDate = Instant.now().toEpochMilli(),
                 endDate = Instant.now().plus(7, ChronoUnit.DAYS).toEpochMilli(),
                 totalBudget = 200000.0,
-                dailyBudget = 25000.0
+                dailyBudget = 25000.0,
+                imageUri = "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             ),
             onNavigateUp = {},
-            onSaveTrip = {}
+            onSaveTrip = {},
+            onDiscard = {}
         )
     }
 }
@@ -228,7 +303,8 @@ private fun AddTripSummaryScreenPreview_Partial() {
                 dailyBudget = null
             ),
             onNavigateUp = {},
-            onSaveTrip = {}
+            onSaveTrip = {},
+            onDiscard = {}
         )
     }
 }

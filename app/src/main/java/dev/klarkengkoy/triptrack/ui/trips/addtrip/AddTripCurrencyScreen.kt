@@ -1,7 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.trips.addtrip
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -121,10 +119,15 @@ private fun AddTripCurrencyContent(
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
+            // This text now has the correct, consistent style
             Text(
                 text = "Add a custom currency instead",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
             )
 
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
