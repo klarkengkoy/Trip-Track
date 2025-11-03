@@ -26,17 +26,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.time.Instant
@@ -53,7 +52,7 @@ fun AddTripDatesScreen(
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val (showDatePicker, setShowDatePicker) = remember { mutableStateOf(false) }
     val dateRangePickerState = rememberDateRangePickerState(
         initialSelectedStartDateMillis = uiState.addTripUiState.startDate,
@@ -141,7 +140,8 @@ fun AddTripDatesScreen(
                     Text(
                         text = "$startDateText - $endDateText",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp)
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             )
@@ -158,6 +158,8 @@ private fun AddTripDatesContent(
     onNextClicked: () -> Unit,
     onSkipClicked: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -172,7 +174,8 @@ private fun AddTripDatesContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = 24.dp),
+                color = colorScheme.onSurface
             )
 
             if (startDateMillis != null && endDateMillis != null) {
@@ -182,13 +185,13 @@ private fun AddTripDatesContent(
                 ) {
                     Column {
                         ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
                             headlineContent = { Text("Start", style = MaterialTheme.typography.bodyLarge) },
                             trailingContent = { Text(formatDate(startDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
                         )
                         HorizontalDivider()
                         ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
                             headlineContent = { Text("End", style = MaterialTheme.typography.bodyLarge) },
                             trailingContent = { Text(formatDate(endDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
                         )
@@ -200,7 +203,7 @@ private fun AddTripDatesContent(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
                         headlineContent = {
                             Text(
                                 text = "Yes, add dates",

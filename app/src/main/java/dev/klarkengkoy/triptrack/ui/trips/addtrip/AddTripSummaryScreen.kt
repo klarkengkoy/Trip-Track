@@ -25,18 +25,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
@@ -57,7 +57,7 @@ fun AddTripSummaryScreen(
     onDiscard: () -> Unit,
     viewModel: TripsViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AddTripSummaryContent(
         addTripUiState = uiState.addTripUiState,
@@ -76,6 +76,7 @@ private fun AddTripSummaryContent(
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
     val summaryItems = remember(addTripUiState) {
@@ -84,11 +85,15 @@ private fun AddTripSummaryContent(
                 add("Trip Name" to addTripUiState.tripName)
             }
             if (addTripUiState.currency.isNotBlank()) {
-                val currencyLabel = try {
-                    val currency = Currency.getInstance(addTripUiState.currency)
-                    "${currency.displayName} (${currency.symbol})"
-                } catch (e: Exception) {
-                    addTripUiState.currency // Fallback to code
+                val currencyLabel = if (addTripUiState.isCurrencyCustom) {
+                    addTripUiState.currency
+                } else {
+                    try {
+                        val currency = Currency.getInstance(addTripUiState.currency)
+                        "${currency.displayName} (${currency.symbol})"
+                    } catch (e: Exception) {
+                        addTripUiState.currency // Fallback to code
+                    }
                 }
                 add("Currency" to currencyLabel)
             }
@@ -101,28 +106,30 @@ private fun AddTripSummaryContent(
                 add("End Date" to formatted)
             }
             addTripUiState.totalBudget?.let {
-                val format = if (addTripUiState.currency.isNotBlank()) {
-                    NumberFormat.getCurrencyInstance().apply {
-                        try {
-                            this.currency = Currency.getInstance(addTripUiState.currency)
-                        } catch (e: Exception) { /* Ignore */ }
-                    }
+                val numberFormat = NumberFormat.getNumberInstance()
+                val symbol = if (addTripUiState.isCurrencyCustom) {
+                    addTripUiState.currency
                 } else {
-                    NumberFormat.getNumberInstance()
+                    try {
+                        Currency.getInstance(addTripUiState.currency).symbol
+                    } catch (e: Exception) {
+                        addTripUiState.currency
+                    }
                 }
-                add("Total Budget" to format.format(it))
+                add("Total Budget" to "$symbol ${numberFormat.format(it)}")
             }
             addTripUiState.dailyBudget?.let {
-                val format = if (addTripUiState.currency.isNotBlank()) {
-                    NumberFormat.getCurrencyInstance().apply {
-                        try {
-                            this.currency = Currency.getInstance(addTripUiState.currency)
-                        } catch (e: Exception) { /* Ignore */ }
-                    }
+                val numberFormat = NumberFormat.getNumberInstance()
+                val symbol = if (addTripUiState.isCurrencyCustom) {
+                    addTripUiState.currency
                 } else {
-                    NumberFormat.getNumberInstance()
+                    try {
+                        Currency.getInstance(addTripUiState.currency).symbol
+                    } catch (e: Exception) {
+                        addTripUiState.currency
+                    }
                 }
-                add("Daily Budget" to format.format(it))
+                add("Daily Budget" to "$symbol ${numberFormat.format(it)}")
             }
         }
     }
@@ -154,7 +161,8 @@ private fun AddTripSummaryContent(
                     text = "Review your trip",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 24.dp)
+                    modifier = Modifier.padding(bottom = 24.dp),
+                    color = colorScheme.onSurface
                 )
 
                 if (addTripUiState.imageUri != null) {
@@ -167,8 +175,15 @@ private fun AddTripSummaryContent(
                             AsyncImage(
                                 model = addTripUiState.imageUri,
                                 contentDescription = "Cover photo for ${addTripUiState.tripName}",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        scaleX = addTripUiState.imageScale
+                                        scaleY = addTripUiState.imageScale
+                                        translationX = addTripUiState.imageOffsetX
+                                        translationY = addTripUiState.imageOffsetY
+                                    },
+                                contentScale = ContentScale.Fit
                             )
 
                             // Scrim for text readability
@@ -177,7 +192,10 @@ private fun AddTripSummaryContent(
                                     .fillMaxSize()
                                     .background(
                                         Brush.verticalGradient(
-                                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                            colors = listOf(
+                                                colorScheme.scrim.copy(alpha = 0f),
+                                                colorScheme.scrim.copy(alpha = 0.7f)
+                                            ),
                                             startY = 300f
                                         )
                                     )
@@ -188,25 +206,23 @@ private fun AddTripSummaryContent(
                                     .padding(16.dp)
                                     .align(Alignment.BottomStart)
                             ) {
-                                val dateRange = if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
+                                Text(
+                                    text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                    color = colorScheme.onPrimary
+                                )
+                                if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
                                     val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
                                     val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
                                     val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                    "${start.format(formatter)} - ${end.format(formatter)}"
-                                } else {
-                                    "No dates set"
-                                }
+                                    val dateRange = "${start.format(formatter)} - ${end.format(formatter)}"
 
-                                Text(
-                                    text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = dateRange,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White
-                                )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = dateRange,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colorScheme.onPrimary
+                                    )
+                                }
                             }
                         }
                     }
@@ -263,7 +279,7 @@ private fun SummaryListItem(label: String, value: String) {
             )
         },
         colors = ListItemDefaults.colors(
-            containerColor = Color.Transparent
+            containerColor = MaterialTheme.colorScheme.surface
         )
     )
 }

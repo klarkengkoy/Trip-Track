@@ -19,6 +19,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.klarkengkoy.triptrack.ui.TripTrackScreen
 import dev.klarkengkoy.triptrack.ui.login.LoginViewModel
 import dev.klarkengkoy.triptrack.ui.login.SignInEvent
+import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -42,26 +43,29 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val snackbarHostState = remember { SnackbarHostState() }
+            TripTrackTheme(dynamicColor = false) {
+                val snackbarHostState = remember { SnackbarHostState() }
 
-            LaunchedEffect(Unit) {
-                loginViewModel.signInEvent.collect { event ->
-                    when (event) {
-                        is SignInEvent.Launch -> launchSignIn(event.providers)
-                        is SignInEvent.Success -> {
-                            snackbarHostState.showSnackbar(event.message)
-                        }
-                        is SignInEvent.Error -> {
-                            snackbarHostState.showSnackbar(event.message)
+                LaunchedEffect(Unit) {
+                    loginViewModel.signInEvent.collect { event ->
+                        when (event) {
+                            is SignInEvent.Launch -> launchSignIn(event.providers)
+                            is SignInEvent.Success -> {
+                                snackbarHostState.showSnackbar(event.message)
+                            }
+
+                            is SignInEvent.Error -> {
+                                snackbarHostState.showSnackbar(event.message)
+                            }
                         }
                     }
                 }
-            }
 
-            TripTrackScreen(
-                loginViewModel = loginViewModel,
-                snackbarHostState = snackbarHostState
-            )
+                TripTrackScreen(
+                    loginViewModel = loginViewModel,
+                    snackbarHostState = snackbarHostState
+                )
+            }
         }
     }
 

@@ -22,7 +22,6 @@ import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.components.BottomNavItem
 import dev.klarkengkoy.triptrack.ui.components.BottomNavigationBar
 import dev.klarkengkoy.triptrack.ui.login.LoginViewModel
-import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,44 +32,42 @@ fun TripTrackScreen(
     val isSignedIn by loginViewModel.isUserSignedIn.collectAsState()
 
     if (isSignedIn) {
-        TripTrackTheme {
-            val navController = rememberNavController()
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val navController = rememberNavController()
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-            val bottomNavItems = listOf(
-                BottomNavItem("trips", R.drawable.travel_luggage_and_bags_24px, "Trips"),
-                BottomNavItem("dashboard", R.drawable.dashboard_24px, "Dashboard"),
-                BottomNavItem("media", R.drawable.photo_album_24px, "Media"),
-                BottomNavItem("maps", R.drawable.map_24px, "Maps"),
-                BottomNavItem("settings", R.drawable.settings_24px, "Settings")
-            )
+        val bottomNavItems = listOf(
+            BottomNavItem("trips", R.drawable.travel_luggage_and_bags_24px, "Trips"),
+            BottomNavItem("dashboard", R.drawable.dashboard_24px, "Dashboard"),
+            BottomNavItem("media", R.drawable.photo_album_24px, "Media"),
+            BottomNavItem("maps", R.drawable.map_24px, "Maps"),
+            BottomNavItem("settings", R.drawable.settings_24px, "Settings")
+        )
 
-            val shouldShowBottomNav = bottomNavItems.any { it.route == navBackStackEntry?.destination?.route }
+        val shouldShowBottomNav = bottomNavItems.any { it.route == navBackStackEntry?.destination?.route }
 
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                bottomBar = {
-                    AnimatedVisibility(
-                        visible = shouldShowBottomNav,
-                        enter = slideInVertically(initialOffsetY = { it }),
-                        exit = slideOutVertically(targetOffsetY = { it })
-                    ) {
-                        BottomNavigationBar(
-                            navController = navController,
-                            items = bottomNavItems,
-                        )
-                    }
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = shouldShowBottomNav,
+                    enter = slideInVertically(initialOffsetY = { it }),
+                    exit = slideOutVertically(targetOffsetY = { it })
+                ) {
+                    BottomNavigationBar(
+                        navController = navController,
+                        items = bottomNavItems,
+                    )
                 }
-            ) { innerPadding ->
-                MainNavigation(
-                    navController = navController,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    innerPadding = innerPadding
-                )
             }
+        ) { innerPadding ->
+            MainNavigation(
+                navController = navController,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                innerPadding = innerPadding
+            )
         }
     } else {
         LoginNavigation(viewModel = loginViewModel)

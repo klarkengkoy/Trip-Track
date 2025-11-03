@@ -22,19 +22,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
+import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +44,7 @@ fun AddTripCurrencyScreen(
     onCurrencyClick: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier,
@@ -63,10 +61,10 @@ fun AddTripCurrencyScreen(
     ) { paddingValues ->
         AddTripCurrencyContent(
             modifier = Modifier.padding(paddingValues),
-            selectedCurrency = uiState.addTripUiState.currency,
+            addTripUiState = uiState.addTripUiState,
             onCurrencyClick = onCurrencyClick,
             onNextClicked = onNavigateNext,
-            onCurrencyChanged = { viewModel.onCurrencyChanged(it) }
+            onCustomCurrencyChanged = { viewModel.onCustomCurrencyChanged(it) }
         )
     }
 }
@@ -75,12 +73,12 @@ fun AddTripCurrencyScreen(
 @Composable
 private fun AddTripCurrencyContent(
     modifier: Modifier = Modifier,
-    selectedCurrency: String,
+    addTripUiState: AddTripUiState,
     onCurrencyClick: () -> Unit,
     onNextClicked: () -> Unit,
-    onCurrencyChanged: (String) -> Unit
+    onCustomCurrencyChanged: (String) -> Unit
 ) {
-    var customCurrencyInput by remember { mutableStateOf("") }
+    val colorScheme = MaterialTheme.colorScheme
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -96,7 +94,8 @@ private fun AddTripCurrencyContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = 24.dp),
+                color = colorScheme.onSurface
             )
 
             ElevatedCard(
@@ -104,9 +103,12 @@ private fun AddTripCurrencyContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 ListItem(
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
                     headlineContent = { Text("Currency", style = MaterialTheme.typography.bodyLarge) },
-                    trailingContent = { Text(selectedCurrency.ifEmpty { "Select" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
+                    trailingContent = {
+                        val currencyText = if (addTripUiState.isCurrencyCustom) "Select" else addTripUiState.currency
+                        Text(currencyText.ifEmpty { "Select" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    }
                 )
             }
 
@@ -115,11 +117,10 @@ private fun AddTripCurrencyContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HorizontalDivider(modifier = Modifier.weight(1f))
-                Text("or", modifier = Modifier.padding(horizontal = 8.dp))
+                Text("or", modifier = Modifier.padding(horizontal = 8.dp), color = colorScheme.onSurfaceVariant)
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            // This text now has the correct, consistent style
             Text(
                 text = "Add a custom currency instead",
                 style = MaterialTheme.typography.headlineSmall,
@@ -127,19 +128,22 @@ private fun AddTripCurrencyContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = 24.dp),
+                color = colorScheme.onSurface
             )
 
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                val customCurrency = if (addTripUiState.isCurrencyCustom) addTripUiState.currency else ""
                 BasicTextField(
-                    value = customCurrencyInput,
-                    onValueChange = {
-                        customCurrencyInput = it
-                        onCurrencyChanged(it)
-                    },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
+                    value = customCurrency,
+                    onValueChange = onCustomCurrencyChanged,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    cursorBrush = SolidColor(colorScheme.onSurface),
                     decorationBox = { innerTextField ->
                         Box(
                             modifier = Modifier
@@ -147,11 +151,11 @@ private fun AddTripCurrencyContent(
                                 .padding(vertical = 16.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (customCurrencyInput.isEmpty()) {
+                            if (customCurrency.isEmpty()) {
                                 Text(
                                     text = "e.g., BTC or Credits",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -164,7 +168,7 @@ private fun AddTripCurrencyContent(
 
         Button(
             onClick = onNextClicked,
-            enabled = selectedCurrency.isNotEmpty(),
+            enabled = addTripUiState.currency.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -180,10 +184,10 @@ private fun AddTripCurrencyContent(
 private fun AddTripCurrencyScreenPreview() {
     TripTrackTheme {
         AddTripCurrencyContent(
-            selectedCurrency = "USD",
+            addTripUiState = AddTripUiState(currency = "USD"),
             onCurrencyClick = {},
             onNextClicked = {},
-            onCurrencyChanged = {}
+            onCustomCurrencyChanged = {}
         )
     }
 }

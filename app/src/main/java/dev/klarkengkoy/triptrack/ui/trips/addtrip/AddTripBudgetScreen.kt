@@ -3,9 +3,11 @@ package dev.klarkengkoy.triptrack.ui.trips.addtrip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -25,19 +27,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.util.Currency
@@ -51,7 +53,7 @@ fun AddTripBudgetScreen(
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier,
@@ -77,6 +79,7 @@ fun AddTripBudgetScreen(
             onSkipClicked = {
                 // Clear any budget info before navigating
                 viewModel.onTotalBudgetChanged("")
+                viewModel.onDailyBudgetChanged("")
                 onNavigateNext()
             }
         )
@@ -96,6 +99,8 @@ private fun AddTripBudgetContent(
 ) {
     var totalBudgetInput by remember { mutableStateOf("") }
     var dailyBudgetInput by remember { mutableStateOf("") }
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
 
     LaunchedEffect(totalBudget) {
         if (totalBudgetInput.toDoubleOrNull() != totalBudget) {
@@ -112,7 +117,7 @@ private fun AddTripBudgetContent(
     val currencySymbol = remember(currencyCode) {
         try {
             if (currencyCode.isNotBlank()) Currency.getInstance(currencyCode).symbol else ""
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             "" // Fallback for invalid codes
         }
     }
@@ -126,12 +131,13 @@ private fun AddTripBudgetContent(
         ) {
             Text(
                 text = "Set your budget",
-                style = MaterialTheme.typography.headlineSmall,
+                style = typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp)
+                    .padding(bottom = 24.dp),
+                color = colorScheme.onSurface
             )
 
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -151,7 +157,7 @@ private fun AddTripBudgetContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HorizontalDivider(modifier = Modifier.weight(1f))
-                Text("or", modifier = Modifier.padding(horizontal = 8.dp))
+                Text("and / or", modifier = Modifier.padding(horizontal = 8.dp), color = colorScheme.onSurfaceVariant)
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
@@ -198,27 +204,32 @@ private fun BudgetInputListItem(
     currencySymbol: String,
     onValueChanged: (String) -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+
     ListItem(
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
         headlineContent = {
             Text(label)
         },
         trailingContent = {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChanged,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.End),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                decorationBox = { innerTextField ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (currencySymbol.isNotBlank()) {
-                            Text(currencySymbol, style = MaterialTheme.typography.bodyLarge)
-                        }
-                        innerTextField()
-                    }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (currencySymbol.isNotBlank()) {
+                    Text(currencySymbol, style = typography.bodyLarge)
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
-            )
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChanged,
+                    textStyle = typography.bodyLarge.copy(
+                        color = colorScheme.onSurface,
+                        textAlign = TextAlign.End
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    cursorBrush = SolidColor(colorScheme.onSurface)
+                )
+            }
         }
     )
 }

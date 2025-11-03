@@ -28,18 +28,18 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.Category
@@ -64,7 +64,7 @@ fun TripsScreen(
     onAddTrip: () -> Unit,
     onAddTransaction: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     TripsScreenContent(
         modifier = modifier,
@@ -139,7 +139,7 @@ private fun TripsTopAppBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primary)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .height(64.dp)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -148,7 +148,7 @@ private fun TripsTopAppBar(
         Text(
             text = selectedTrip?.name ?: stringResource(id = R.string.title_trips),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onPrimary
+            color = MaterialTheme.colorScheme.onPrimaryContainer
         )
     }
 }
@@ -220,7 +220,7 @@ private fun StatCard(
             Text(text = label, style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$currencySymbol${String.format(Locale.US, "%,.2f", value)}",
+                text = "$currencySymbol ${String.format(Locale.US, "%,.2f", value)}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -263,13 +263,13 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
             },
             trailingContent = {
                 Text(
-                    text = "$currencySymbol${String.format(Locale.US, "%,.2f", transaction.amount)}",
+                    text = "$currencySymbol ${String.format(Locale.US, "%,.2f", transaction.amount)}",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
             },
             colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent
+                containerColor = MaterialTheme.colorScheme.surface
             )
         )
     }
@@ -299,13 +299,6 @@ private fun TripsListContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
-    val dateRange = if (trip.startDate != null && trip.endDate != null) {
-        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
-    } else {
-        "No dates set"
-    }
-
     if (trip.imageUri != null) {
         Card(
             modifier = modifier
@@ -316,8 +309,15 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                 AsyncImage(
                     model = trip.imageUri,
                     contentDescription = "Cover photo for ${trip.name}",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = trip.imageScale
+                            scaleY = trip.imageScale
+                            translationX = trip.imageOffsetX
+                            translationY = trip.imageOffsetY
+                        },
+                    contentScale = ContentScale.Fit
                 )
 
                 // Scrim for text readability
@@ -326,7 +326,10 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0f),
+                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)
+                                ),
                                 startY = 300f
                             )
                         )
@@ -339,14 +342,19 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = trip.name, style = MaterialTheme.typography.titleLarge,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = dateRange,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
-                    )
+                    if (trip.startDate != null && trip.endDate != null) {
+                        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                        val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = dateRange,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }
@@ -356,12 +364,17 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(text = trip.name, style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = dateRange,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (trip.startDate != null && trip.endDate != null) {
+                    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                    val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = dateRange,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

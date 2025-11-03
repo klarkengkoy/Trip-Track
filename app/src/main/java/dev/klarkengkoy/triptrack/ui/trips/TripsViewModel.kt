@@ -33,9 +33,11 @@ data class AddTripUiState(
     val imageUri: String? = null,
     val imageOffsetX: Float = 0f,
     val imageOffsetY: Float = 0f,
+    val imageScale: Float = 1f,
     val startDate: Long? = null,
     val endDate: Long? = null,
     val currency: String = "",
+    val isCurrencyCustom: Boolean = false,
     val totalBudget: Double? = null,
     val dailyBudget: Double? = null
 )
@@ -75,6 +77,14 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+    fun onImageScaleChanged(scale: Float) {
+        _uiState.update {
+            it.copy(
+                addTripUiState = it.addTripUiState.copy(imageScale = scale)
+            )
+        }
+    }
+
     fun onDatesChanged(startDate: Long?, endDate: Long?) {
         _uiState.update {
             it.copy(
@@ -86,23 +96,44 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+    @Deprecated("Use onCurrencySelected or onCustomCurrencyChanged instead")
     fun onCurrencyChanged(newCurrency: String) {
         _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(currency = newCurrency)) }
     }
 
+    fun onCurrencySelected(newCurrency: String) {
+        _uiState.update {
+            it.copy(
+                addTripUiState = it.addTripUiState.copy(
+                    currency = newCurrency,
+                    isCurrencyCustom = false
+                )
+            )
+        }
+    }
+
+    fun onCustomCurrencyChanged(newCurrency: String) {
+        _uiState.update {
+            it.copy(
+                addTripUiState = it.addTripUiState.copy(
+                    currency = newCurrency,
+                    isCurrencyCustom = true
+                )
+            )
+        }
+    }
+
     fun onTotalBudgetChanged(newBudget: String) {
         val totalBudget = newBudget.toDoubleOrNull()
-        val startDate = _uiState.value.addTripUiState.startDate
-        val endDate = _uiState.value.addTripUiState.endDate
+        val addTripUiState = _uiState.value.addTripUiState
 
-        var dailyBudget: Double? = null
-        if (totalBudget != null && startDate != null && endDate != null) {
-            val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+        val dailyBudget = if (totalBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
+            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) {
-                dailyBudget = totalBudget / days
-            }
+            if (days > 0) totalBudget / days else null
+        } else {
+            addTripUiState.dailyBudget // Keep existing daily budget if no dates
         }
 
         _uiState.update {
@@ -117,17 +148,15 @@ class TripsViewModel @Inject constructor(
 
     fun onDailyBudgetChanged(newBudget: String) {
         val dailyBudget = newBudget.toDoubleOrNull()
-        val startDate = _uiState.value.addTripUiState.startDate
-        val endDate = _uiState.value.addTripUiState.endDate
+        val addTripUiState = _uiState.value.addTripUiState
 
-        var totalBudget: Double? = null
-        if (dailyBudget != null && startDate != null && endDate != null) {
-            val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+        val totalBudget = if (dailyBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
+            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) {
-                totalBudget = dailyBudget * days
-            }
+            if (days > 0) dailyBudget * days else null
+        } else {
+            addTripUiState.totalBudget // Keep existing total budget if no dates
         }
 
         _uiState.update {
@@ -140,6 +169,7 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+
     fun addTrip() {
         viewModelScope.launch {
             val newTrip = Trip(
@@ -148,6 +178,7 @@ class TripsViewModel @Inject constructor(
                 imageUri = _uiState.value.addTripUiState.imageUri,
                 imageOffsetX = _uiState.value.addTripUiState.imageOffsetX,
                 imageOffsetY = _uiState.value.addTripUiState.imageOffsetY,
+                imageScale = _uiState.value.addTripUiState.imageScale,
                 startDate = _uiState.value.addTripUiState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
                 endDate = _uiState.value.addTripUiState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
                 totalBudget = _uiState.value.addTripUiState.totalBudget,
