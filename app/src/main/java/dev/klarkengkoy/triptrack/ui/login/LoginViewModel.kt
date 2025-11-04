@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -59,6 +60,15 @@ class LoginViewModel @Inject constructor(
     init {
         Log.d(TAG, "LoginViewModel initialized")
         Firebase.auth.addAuthStateListener(authStateListener)
+
+        viewModelScope.launch {
+            isUserSignedIn.collect { isSignedIn ->
+                if (isSignedIn) {
+                    Log.d(TAG, "User is signed in, triggering trip sync.")
+                    tripsRepository.syncTrips()
+                }
+            }
+        }
     }
 
     override fun onCleared() {
@@ -127,9 +137,6 @@ class LoginViewModel @Inject constructor(
         Log.d(TAG, "onSignInResult received with code: ${result.resultCode}")
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             viewModelScope.launch {
-                // Sync trips from Firestore to Room
-                tripsRepository.syncTrips()
-
                 val user = Firebase.auth.currentUser
                 if (user != null) {
                     userDataStore.saveUser(user.displayName ?: "", user.email ?: "")

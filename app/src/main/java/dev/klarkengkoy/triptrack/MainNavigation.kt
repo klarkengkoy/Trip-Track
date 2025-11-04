@@ -54,8 +54,8 @@ fun MainNavigation(
             SettingsScreen()
         }
         navigation(startDestination = "addTripName", route = ADD_TRIP_ROUTE) {
-            composable("addTripName") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripName") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripNameScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -63,8 +63,8 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("addTripCurrency") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripCurrency") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripCurrencyScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -73,8 +73,8 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("addTripDates") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripDates") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripDatesScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -82,8 +82,8 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("addTripBudget") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripBudget") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripBudgetScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -91,8 +91,8 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("addTripPhoto") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripPhoto") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripPhotoScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -100,8 +100,8 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("addTripSummary") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("addTripSummary") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 AddTripSummaryScreen(
                     onNavigateUp = { navController.navigateUp() },
@@ -119,13 +119,13 @@ fun MainNavigation(
                     viewModel = viewModel
                 )
             }
-            composable("currencyList") {
-                val backStackEntry = remember(it) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
+            composable("currencyList") { entry ->
+                val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
                 val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
                 CurrencyListScreen(
                     onNavigateUp = { navController.navigateUp() },
                     onCurrencySelected = {
-                        viewModel.onCurrencyChanged(it)
+                        viewModel.onCurrencySelected(it)
                         navController.navigateUp()
                     }
                 )

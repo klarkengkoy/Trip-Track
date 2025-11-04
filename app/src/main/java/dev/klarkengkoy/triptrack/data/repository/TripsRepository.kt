@@ -13,5 +13,7 @@ interface TripsRepository {
 
     suspend fun deleteTrip(tripId: String)
 
+    suspend fun deleteTrips(tripIds: Set<String>)
+
     suspend fun syncTrips()
 }

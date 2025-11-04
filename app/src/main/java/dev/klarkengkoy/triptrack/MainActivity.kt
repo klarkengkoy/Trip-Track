@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            TripTrackTheme(dynamicColor = false) {
+            TripTrackTheme {
                 val snackbarHostState = remember { SnackbarHostState() }
 
                 LaunchedEffect(Unit) {

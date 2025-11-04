@@ -52,16 +52,33 @@ class TripsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteTrips(tripIds: Set<String>) {
+        // Perform a "soft delete" locally first for immediate UI update
+        tripIds.forEach { tripId ->
+            tripDao.getTripById(tripId)?.let {
+                tripDao.insertTrip(it.copy(isDeleted = true))
+            }
+        }
+        // Immediately attempt to sync the deletion to the remote backend.
+        syncTrips()
+    }
+
     override suspend fun syncTrips() {
         try {
             val collection = userTripsCollection ?: return
 
             // 1. Handle local deletions
             val deletedTrips = tripDao.getDeletedTrips()
-            deletedTrips.forEach { trip ->
-                collection.document(trip.id).delete().await()
-                tripDao.deleteTrip(trip.id) // Permanent delete from local DB
-                Log.d(TAG, "Uploaded deletion for trip: ${trip.id}")
+            if (deletedTrips.isNotEmpty()) {
+                val batch = firestore.batch()
+                deletedTrips.forEach { trip ->
+                    batch.delete(collection.document(trip.id))
+                }
+                batch.commit().await()
+                deletedTrips.forEach { trip ->
+                    tripDao.deleteTrip(trip.id) // Permanent delete from local DB
+                }
+                Log.d(TAG, "Uploaded deletions for ${deletedTrips.size} trips.")
             }
 
             // 2. Handle local additions/updates

@@ -1,8 +1,12 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,28 +21,42 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.window.Popup
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
@@ -47,6 +65,7 @@ import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.TransactionType
 import dev.klarkengkoy.triptrack.model.Trip
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -75,6 +94,12 @@ fun TripsScreen(
         onAddTransaction = {
             uiState.selectedTrip?.let { onAddTransaction(it.id) }
         },
+        onEnterSelectionMode = { tripId -> viewModel.enterSelectionMode(tripId) },
+        onExitSelectionMode = { viewModel.exitSelectionMode() },
+        onToggleTripSelection = { tripId -> viewModel.toggleTripSelection(tripId) },
+        onSelectAllTrips = { viewModel.selectAllTrips() },
+        onClearSelectedTrips = { viewModel.clearSelectedTrips() },
+        onDeleteSelectedTrips = { viewModel.deleteSelectedTrips() }
     )
 }
 
@@ -89,17 +114,32 @@ private fun TripsScreenContent(
     onUnselectTrip: () -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: () -> Unit,
+    onEnterSelectionMode: (String) -> Unit,
+    onExitSelectionMode: () -> Unit,
+    onToggleTripSelection: (String) -> Unit,
+    onSelectAllTrips: () -> Unit,
+    onClearSelectedTrips: () -> Unit,
+    onDeleteSelectedTrips: () -> Unit
 ) {
     val selectedTrip = uiState.selectedTrip
+    val selectionMode = uiState.selectionMode
 
-    BackHandler(enabled = selectedTrip != null) {
-        onUnselectTrip()
+    BackHandler(enabled = selectedTrip != null || selectionMode) {
+        if (selectionMode) {
+            onExitSelectionMode()
+        } else {
+            onUnselectTrip()
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             TripsTopAppBar(
                 selectedTrip = selectedTrip,
+                selectionMode = selectionMode,
+                onSelectAll = onSelectAllTrips,
+                onClearSelection = onClearSelectedTrips,
+                isAllSelected = uiState.trips.isNotEmpty() && uiState.selectedTrips.size == uiState.trips.size
             )
 
             if (selectedTrip != null) {
@@ -110,31 +150,77 @@ private fun TripsScreenContent(
             } else {
                 TripsListContent(
                     trips = uiState.trips,
-                    onTripSelected = onSelectTrip
+                    onTripSelected = onSelectTrip,
+                    selectionMode = selectionMode,
+                    selectedTrips = uiState.selectedTrips,
+                    onEnterSelectionMode = onEnterSelectionMode,
+                    onToggleTripSelection = onToggleTripSelection
                 )
             }
         }
 
-        ExtendedFloatingActionButton(
+        if (selectionMode) {
+            Popup(alignment = Alignment.BottomCenter) {
+                TripsBottomBar(
+                    selectedCount = uiState.selectedTrips.size,
+                    onCancel = onExitSelectionMode,
+                    onDelete = onDeleteSelectedTrips
+                )
+            }
+        } else {
+            ExtendedFloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                onClick = {
+                    if (selectedTrip != null) {
+                        onAddTransaction()
+                    } else {
+                        onAddTrip()
+                    }
+                },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                text = { Text(if (selectedTrip != null) "New Transaction" else "New Trip") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun TripsBottomBar(
+    selectedCount: Int,
+    onCancel: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BottomAppBar(modifier = modifier) {
+        Row(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            onClick = {
-                if (selectedTrip != null) {
-                    onAddTransaction()
-                } else {
-                    onAddTrip()
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("$selectedCount selected", style = MaterialTheme.typography.titleMedium)
+            Row {
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Delete")
                 }
-            },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text(if (selectedTrip != null) "New Transaction" else "New Trip") }
-        )
+                IconButton(onClick = onCancel) {
+                    Icon(Icons.Filled.Cancel, contentDescription = "Cancel")
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun TripsTopAppBar(
-    selectedTrip: Trip?
+    selectedTrip: Trip?,
+    selectionMode: Boolean,
+    onSelectAll: () -> Unit,
+    onClearSelection: () -> Unit,
+    isAllSelected: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -143,13 +229,28 @@ private fun TripsTopAppBar(
             .height(64.dp)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = if (selectionMode) Arrangement.SpaceBetween else Arrangement.Center
     ) {
         Text(
-            text = selectedTrip?.name ?: stringResource(id = R.string.title_trips),
+            text = when {
+                selectionMode -> "Select Trips to Delete"
+                selectedTrip != null -> selectedTrip.name
+                else -> stringResource(id = R.string.title_trips)
+            },
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onPrimaryContainer
         )
+        if (selectionMode) {
+            IconToggleButton(checked = isAllSelected, onCheckedChange = {
+                if (it) onSelectAll() else onClearSelection()
+            }) {
+                if (isAllSelected) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = "Deselect All")
+                } else {
+                    Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Select All")
+                }
+            }
+        }
     }
 }
 
@@ -188,7 +289,7 @@ private fun TripDetailsContent(
         val groupedByDate = transactions.sortedByDescending { it.date }.groupBy { it.date }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             groupedByDate.forEach { (date, transactionsOnDate) ->
@@ -217,12 +318,17 @@ private fun StatCard(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "$currencySymbol ${String.format(Locale.US, "%,.2f", value)}",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -248,24 +354,32 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         ListItem(
             headlineContent = {
-                Text(text = if (notes.isNullOrBlank()) transaction.category.name else notes)
+                Text(
+                    text = if (notes.isNullOrBlank()) transaction.category.name else notes,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             },
             supportingContent = {
                 if (!notes.isNullOrBlank()) {
-                    Text(text = transaction.category.name)
+                    Text(
+                        text = transaction.category.name,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
             leadingContent = {
                 Icon(
                     imageVector = Icons.Filled.ShoppingCart, // Placeholder
                     contentDescription = transaction.category.name,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             trailingContent = {
                 Text(
                     text = "$currencySymbol ${String.format(Locale.US, "%,.2f", transaction.amount)}",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             colors = ListItemDefaults.colors(
@@ -280,29 +394,78 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
 private fun TripsListContent(
     trips: List<Trip>,
     onTripSelected: (Trip) -> Unit,
+    selectionMode: Boolean,
+    selectedTrips: Set<String>,
+    onEnterSelectionMode: (String) -> Unit,
+    onToggleTripSelection: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bottomPadding = 16.dp + if (selectionMode) 80.dp else 72.dp
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding)
     ) {
         items(trips) { trip ->
+            val isSelected = selectedTrips.contains(trip.id)
             TripListItem(
                 trip = trip,
-                modifier = Modifier.clickable { onTripSelected(trip) }
+                isSelected = isSelected,
+                selectionMode = selectionMode,
+                onClick = {
+                    if (selectionMode) {
+                        onToggleTripSelection(trip.id)
+                    } else {
+                        onTripSelected(trip)
+                    }
+                },
+                onLongClick = { onEnterSelectionMode(trip.id) }
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
+private fun TripListItem(
+    trip: Trip,
+    isSelected: Boolean,
+    selectionMode: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    val scale = remember { Animatable(1f) }
+    val wasSelected = remember { mutableStateOf(isSelected) }
+
+    LaunchedEffect(isSelected) {
+        if (isSelected && !wasSelected.value) {
+            launch {
+                scale.animateTo(
+                    targetValue = 1.05f,
+                    animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f)
+                )
+                scale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f)
+                )
+            }
+        }
+        wasSelected.value = isSelected
+    }
+
+    val cardModifier = Modifier
+        .fillMaxWidth()
+        .scale(scale.value)
+        .combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick,
+            indication = null, // Disable ripple to show our own animation
+            interactionSource = remember { MutableInteractionSource() }
+        )
+
     if (trip.imageUri != null) {
         Card(
-            modifier = modifier
-                .fillMaxWidth()
+            modifier = cardModifier
                 .height(200.dp)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -334,6 +497,13 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                             )
                         )
                 )
+                if (selectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = if (isSelected) 0.3f else 0f))
+                    )
+                }
                 // Content
                 Column(
                     modifier = Modifier
@@ -342,7 +512,7 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = trip.name, style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     if (trip.startDate != null && trip.endDate != null) {
                         val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -352,28 +522,79 @@ private fun TripListItem(trip: Trip, modifier: Modifier = Modifier) {
                         Text(
                             text = dateRange,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                    }
+                }
+                if (selectionMode) {
+                    IconToggleButton(
+                        checked = isSelected,
+                        onCheckedChange = { onClick() },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(16.dp)
+                    ) {
+                        if (isSelected) {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                        } else {
+                            Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
                     }
                 }
             }
         }
     } else {
-        ElevatedCard(modifier = modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(text = trip.name, style = MaterialTheme.typography.titleMedium)
-                if (trip.startDate != null && trip.endDate != null) {
-                    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                    val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+        val elevation = 1.dp
+        val containerColor = if (isSelected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                .compositeOver(MaterialTheme.colorScheme.surfaceColorAtElevation(elevation))
+        } else {
+            MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
+        }
+        val contentColor = if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+        ElevatedCard(
+            modifier = cardModifier,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = containerColor,
+                contentColor = contentColor
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = dateRange,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = trip.name,
+                        style = MaterialTheme.typography.titleMedium,
                     )
+                    if (trip.startDate != null && trip.endDate != null) {
+                        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                        val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = dateRange,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+                if (selectionMode) {
+                    IconToggleButton(
+                        checked = isSelected,
+                        onCheckedChange = { onClick() }
+                    ) {
+                        if (isSelected) {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                        } else {
+                            Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected")
+                        }
+                    }
                 }
             }
         }
@@ -432,6 +653,12 @@ private fun TripsScreenPreview_TripSelected() {
             onUnselectTrip = { },
             onAddTrip = { },
             onAddTransaction = { },
+            onEnterSelectionMode = {},
+            onExitSelectionMode = {},
+            onToggleTripSelection = {},
+            onSelectAllTrips = {},
+            onClearSelectedTrips = {},
+            onDeleteSelectedTrips = {}
         )
     }
 }
@@ -468,6 +695,56 @@ private fun TripsScreenPreview_NoTripSelected() {
             onUnselectTrip = { },
             onAddTrip = { },
             onAddTransaction = { },
+            onEnterSelectionMode = {},
+            onExitSelectionMode = {},
+            onToggleTripSelection = {},
+            onSelectAllTrips = {},
+            onClearSelectedTrips = {},
+            onDeleteSelectedTrips = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Full Screen - Selection Mode")
+@Composable
+private fun TripsScreenPreview_SelectionMode() {
+    val sampleTrips = listOf(
+        Trip(
+            id = "1",
+            name = "Tokyo Adventure",
+            currency = "JPY",
+            startDate = LocalDate.of(2024, 5, 1),
+            endDate = LocalDate.of(2024, 5, 10),
+            totalBudget = 200000.0,
+            imageUri = "placeholder" // Example with image
+        ),
+        Trip(
+            id = "2",
+            name = "Paris Getaway",
+            currency = "EUR",
+            startDate = LocalDate.of(2024, 8, 20),
+            endDate = LocalDate.of(2024, 8, 27),
+            totalBudget = 3000.0
+        )
+    )
+
+    TripTrackTheme {
+        TripsScreenContent(
+            uiState = TripsUiState(
+                selectionMode = true,
+                selectedTrips = setOf("2"),
+                trips = sampleTrips
+            ),
+            onSelectTrip = { },
+            onUnselectTrip = { },
+            onAddTrip = { },
+            onAddTransaction = { },
+            onEnterSelectionMode = {},
+            onExitSelectionMode = {},
+            onToggleTripSelection = {},
+            onSelectAllTrips = {},
+            onClearSelectedTrips = {},
+            onDeleteSelectedTrips = {}
         )
     }
 }

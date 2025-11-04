@@ -22,7 +22,9 @@ data class TripsUiState(
     val selectedTrip: Trip? = null,
     val trips: List<Trip> = emptyList(),
     val transactionsByTrip: Map<String, List<Transaction>> = emptyMap(),
-    val addTripUiState: AddTripUiState = AddTripUiState()
+    val addTripUiState: AddTripUiState = AddTripUiState(),
+    val selectionMode: Boolean = false,
+    val selectedTrips: Set<String> = emptySet()
 ) {
     val selectedTripTransactions: List<Transaction>
         get() = selectedTrip?.let { transactionsByTrip[it.id] }.orEmpty()
@@ -195,5 +197,45 @@ class TripsViewModel @Inject constructor(
 
     fun selectTrip(trip: Trip) {
         _uiState.update { it.copy(selectedTrip = trip) }
+    }
+
+    fun enterSelectionMode(tripId: String) {
+        _uiState.update {
+            it.copy(selectionMode = true, selectedTrips = it.selectedTrips + tripId)
+        }
+    }
+
+    fun exitSelectionMode() {
+        _uiState.update { it.copy(selectionMode = false, selectedTrips = emptySet()) }
+    }
+
+    fun toggleTripSelection(tripId: String) {
+        _uiState.update { uiState ->
+            val selectedTrips = uiState.selectedTrips
+            val newSelectedTrips = if (selectedTrips.contains(tripId)) {
+                selectedTrips - tripId
+            } else {
+                selectedTrips + tripId
+            }
+            uiState.copy(selectedTrips = newSelectedTrips)
+        }
+    }
+
+    fun selectAllTrips() {
+        _uiState.update { uiState ->
+            val allTripIds = uiState.trips.map { it.id }.toSet()
+            uiState.copy(selectedTrips = allTripIds)
+        }
+    }
+
+    fun clearSelectedTrips() {
+        _uiState.update { it.copy(selectedTrips = emptySet()) }
+    }
+
+    fun deleteSelectedTrips() {
+        viewModelScope.launch {
+            tripsRepository.deleteTrips(_uiState.value.selectedTrips)
+            exitSelectionMode()
+        }
     }
 }
