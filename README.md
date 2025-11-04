@@ -27,7 +27,7 @@ It leverages modern Android development tools and best practices to deliver a ro
 - **Upcoming Features**
   - **Google Maps** for visualizing trips and destinations.  
   - **Retrofit** for integrating future REST APIs (e.g., travel data, weather).  
-  - **Navigation Component v3** for enhanced, type-safe navigation.
+  - **Navigation 3** for unified, type-safe navigation across composables and future destinations.
 
 ---
 
@@ -46,7 +46,7 @@ It leverages modern Android development tools and best practices to deliver a ro
 ### **Architecture & Navigation**
 - **MVVM (Model–View–ViewModel)** — For modular, testable, and maintainable structure.  
 - **ViewModel + StateFlow** — Manages and emits UI state reactively.  
-- **Android Navigation Component (v3 soon)** — Handles navigation and argument passing between composables.
+- **Navigation 3** — The latest generation of the Android Navigation library that unifies support for both **Views and Jetpack Compose**, providing type-safe destinations, simplified argument handling, and improved deep link support.
 
 ### **Asynchronous Operations**
 - **Kotlin Coroutines** — For structured concurrency and non-blocking execution.  
@@ -68,16 +68,15 @@ It leverages modern Android development tools and best practices to deliver a ro
 - **Firebase Authentication** — Provides secure, multi-provider user authentication.
 
 ### **Mapping**
-- **Google Maps (Planned)** — Will enable map visualization of trips, markers, and routes.
+- **Google Maps (Planned)** — Will enable map visualization of trips and markers.
 
 ---
 
 ## 🧩 Future Roadmap
 - Integrate **Retrofit** for external travel-related APIs.  
 - Implement **Google Maps** for trip visualization.  
-- Upgrade to **Navigation Component v3**.  
+- Upgrade to **Navigation 3** for unified and type-safe navigation.  
 - Add **unit, integration, and UI tests**.  
-- Expand to **multi-device sync with conflict resolution policies**.
 
 ---
 
