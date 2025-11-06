@@ -80,6 +80,20 @@ private fun AddTripSummaryContent(
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
     val summaryItems = remember(addTripUiState) {
+        val currencySymbol = if (addTripUiState.currency.isNotBlank()) {
+            if (addTripUiState.isCurrencyCustom) {
+                addTripUiState.currency
+            } else {
+                try {
+                    Currency.getInstance(addTripUiState.currency).symbol
+                } catch (_: Exception) {
+                    addTripUiState.currency
+                }
+            }
+        } else {
+            ""
+        }
+
         buildList {
             if (addTripUiState.tripName.isNotBlank()) {
                 add("Trip Name" to addTripUiState.tripName)
@@ -90,8 +104,8 @@ private fun AddTripSummaryContent(
                 } else {
                     try {
                         val currency = Currency.getInstance(addTripUiState.currency)
-                        "${currency.displayName} (${currency.symbol})"
-                    } catch (e: Exception) {
+                        "${currency.displayName} ($currencySymbol)"
+                    } catch (_: Exception) {
                         addTripUiState.currency // Fallback to code
                     }
                 }
@@ -107,29 +121,11 @@ private fun AddTripSummaryContent(
             }
             addTripUiState.totalBudget?.let {
                 val numberFormat = NumberFormat.getNumberInstance()
-                val symbol = if (addTripUiState.isCurrencyCustom) {
-                    addTripUiState.currency
-                } else {
-                    try {
-                        Currency.getInstance(addTripUiState.currency).symbol
-                    } catch (e: Exception) {
-                        addTripUiState.currency
-                    }
-                }
-                add("Total Budget" to "$symbol ${numberFormat.format(it)}")
+                add("Total Budget" to "$currencySymbol ${numberFormat.format(it)}")
             }
             addTripUiState.dailyBudget?.let {
                 val numberFormat = NumberFormat.getNumberInstance()
-                val symbol = if (addTripUiState.isCurrencyCustom) {
-                    addTripUiState.currency
-                } else {
-                    try {
-                        Currency.getInstance(addTripUiState.currency).symbol
-                    } catch (e: Exception) {
-                        addTripUiState.currency
-                    }
-                }
-                add("Daily Budget" to "$symbol ${numberFormat.format(it)}")
+                add("Daily Budget" to "$currencySymbol ${numberFormat.format(it)}")
             }
         }
     }
@@ -208,7 +204,7 @@ private fun AddTripSummaryContent(
                             ) {
                                 Text(
                                     text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
-                                    color = colorScheme.onPrimary
+                                    color = colorScheme.onPrimaryContainer
                                 )
                                 if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
                                     val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -220,7 +216,7 @@ private fun AddTripSummaryContent(
                                     Text(
                                         text = dateRange,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = colorScheme.onPrimary
+                                        color = colorScheme.onPrimaryContainer
                                     )
                                 }
                             }

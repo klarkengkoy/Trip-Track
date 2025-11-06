@@ -1,5 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.trips.addtrip
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,7 +72,6 @@ fun AddTripCurrencyScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripCurrencyContent(
     modifier: Modifier = Modifier,
@@ -85,29 +87,41 @@ private fun AddTripCurrencyContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = "Select your currency",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 color = colorScheme.onSurface
             )
 
             ElevatedCard(
                 onClick = onCurrencyClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 ListItem(
-                    colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
+                    colors = ListItemDefaults.colors(
+                        headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        containerColor = Color.Transparent
+                    ),
                     headlineContent = { Text("Currency", style = MaterialTheme.typography.bodyLarge) },
                     trailingContent = {
-                        val currencyText = if (addTripUiState.isCurrencyCustom) "Select" else addTripUiState.currency
-                        Text(currencyText.ifEmpty { "Select" }, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        val currencyText = if (addTripUiState.isCurrencyCustom || addTripUiState.currency.isEmpty()) {
+                            "Select"
+                        } else {
+                            addTripUiState.currency
+                        }
+                        Text(
+                            text = currencyText, 
+                            style = MaterialTheme.typography.bodyLarge, 
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
                 )
             }
@@ -121,29 +135,21 @@ private fun AddTripCurrencyContent(
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            Text(
-                text = "Add a custom currency instead",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                color = colorScheme.onSurface
-            )
-
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
                 val customCurrency = if (addTripUiState.isCurrencyCustom) addTripUiState.currency else ""
                 BasicTextField(
                     value = customCurrency,
                     onValueChange = onCustomCurrencyChanged,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.Center
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    cursorBrush = SolidColor(colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSecondaryContainer),
                     decorationBox = { innerTextField ->
                         Box(
                             modifier = Modifier
@@ -155,7 +161,7 @@ private fun AddTripCurrencyContent(
                                 Text(
                                     text = "e.g., BTC or Credits",
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
                             }

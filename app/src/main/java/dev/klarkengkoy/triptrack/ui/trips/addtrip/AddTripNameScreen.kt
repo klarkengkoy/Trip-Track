@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -87,17 +88,20 @@ private fun AddTripNameContent(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
                 BasicTextField(
                     value = name,
                     onValueChange = onNameChanged,
                     textStyle = MaterialTheme.typography.titleLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.Center
                     ),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSecondaryContainer),
                     decorationBox = { innerTextField ->
                         Box(
                             modifier = Modifier
@@ -109,7 +113,7 @@ private fun AddTripNameContent(
                                 Text(
                                     text = "e.g. Seoul Searching or Q3 Getaway",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
                             }

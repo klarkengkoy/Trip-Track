@@ -30,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,7 +66,7 @@ fun AddTripPhotoScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var scale by remember(uiState.addTripUiState.imageScale) { mutableStateOf(uiState.addTripUiState.imageScale) }
+    var scale by remember(uiState.addTripUiState.imageScale) { mutableFloatStateOf(uiState.addTripUiState.imageScale) }
     var offset by remember(uiState.addTripUiState.imageOffsetX, uiState.addTripUiState.imageOffsetY) {
         mutableStateOf(Offset(uiState.addTripUiState.imageOffsetX, uiState.addTripUiState.imageOffsetY))
     }
@@ -211,7 +212,7 @@ private fun AddTripPhotoContent(
                         ) {
                             Text(
                                 text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
                                 val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -223,7 +224,7 @@ private fun AddTripPhotoContent(
                                 Text(
                                     text = dateRange,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }

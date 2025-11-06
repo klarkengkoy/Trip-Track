@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ElevatedCard
@@ -31,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -178,39 +180,42 @@ private fun AddTripDatesContent(
                 color = colorScheme.onSurface
             )
 
-            if (startDateMillis != null && endDateMillis != null) {
-                ElevatedCard(
-                    onClick = onAddDatesClicked,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+            ElevatedCard(
+                onClick = onAddDatesClicked,
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                if (startDateMillis != null && endDateMillis != null) {
                     Column {
                         ListItem(
-                            colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
+                            colors = ListItemDefaults.colors(
+                                headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                containerColor = Color.Transparent
+                            ),
                             headlineContent = { Text("Start", style = MaterialTheme.typography.bodyLarge) },
-                            trailingContent = { Text(formatDate(startDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
+                            trailingContent = { Text(formatDate(startDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer) }
                         )
                         HorizontalDivider()
                         ListItem(
-                            colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
+                            colors = ListItemDefaults.colors(
+                                headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                containerColor = Color.Transparent
+                            ),
                             headlineContent = { Text("End", style = MaterialTheme.typography.bodyLarge) },
-                            trailingContent = { Text(formatDate(endDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold) }
+                            trailingContent = { Text(formatDate(endDateMillis), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer) }
                         )
                     }
-                }
-            } else {
-                ElevatedCard(
-                    onClick = onAddDatesClicked,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                } else {
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
                                 text = "Yes, add dates",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
                     )

@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -140,7 +142,10 @@ private fun AddTripBudgetContent(
                 color = colorScheme.onSurface
             )
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
                 BudgetInputListItem(
                     label = "Total Budget",
                     value = totalBudgetInput,
@@ -161,7 +166,10 @@ private fun AddTripBudgetContent(
                 HorizontalDivider(modifier = Modifier.weight(1f))
             }
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
                 BudgetInputListItem(
                     label = "Daily Budget",
                     value = dailyBudgetInput,
@@ -204,30 +212,30 @@ private fun BudgetInputListItem(
     currencySymbol: String,
     onValueChanged: (String) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val typography = MaterialTheme.typography
-
     ListItem(
-        colors = ListItemDefaults.colors(containerColor = colorScheme.surface),
+        colors = ListItemDefaults.colors(
+            headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            containerColor = Color.Transparent
+        ),
         headlineContent = {
             Text(label)
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (currencySymbol.isNotBlank()) {
-                    Text(currencySymbol, style = typography.bodyLarge)
+                    Text(currencySymbol, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     Spacer(modifier = Modifier.width(4.dp))
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChanged,
-                    textStyle = typography.bodyLarge.copy(
-                        color = colorScheme.onSurface,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.End
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    cursorBrush = SolidColor(colorScheme.onSurface)
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSecondaryContainer)
                 )
             }
         }
