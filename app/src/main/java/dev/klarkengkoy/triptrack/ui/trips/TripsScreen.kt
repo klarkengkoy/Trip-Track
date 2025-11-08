@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -38,7 +37,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -61,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.Category
+import dev.klarkengkoy.triptrack.model.PaymentMethod
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.TransactionType
 import dev.klarkengkoy.triptrack.model.Trip
@@ -262,7 +260,17 @@ private fun TripDetailsContent(
 ) {
     val totalAmount = transactions.sumOf { it.amount }
     val averageAmount = if (transactions.isNotEmpty()) totalAmount / transactions.size else 0.0
-    val currencySymbol = Currency.getInstance(trip.currency).symbol
+    val currencySymbol = remember(trip.currency, trip.isCurrencyCustom) {
+        if (trip.isCurrencyCustom) {
+            trip.currency
+        } else {
+            try {
+                Currency.getInstance(trip.currency).symbol
+            } catch (e: Exception) {
+                trip.currency // Fallback for safety
+            }
+        }
+    }
 
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -406,7 +414,7 @@ private fun TripsListContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding)
     ) {
-        items(trips) { trip ->
+        items(items = trips, key = { it.id }) { trip ->
             val isSelected = selectedTrips.contains(trip.id)
             TripListItem(
                 trip = trip,
@@ -463,12 +471,13 @@ private fun TripListItem(
             interactionSource = remember { MutableInteractionSource() }
         )
 
-    if (trip.imageUri != null) {
-        Card(
-            modifier = cardModifier
-                .height(200.dp)
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+    Card(
+        modifier = cardModifier
+            .height(200.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background Layer
+            if (trip.imageUri != null) {
                 AsyncImage(
                     model = trip.imageUri,
                     contentDescription = "Cover photo for ${trip.name}",
@@ -482,118 +491,72 @@ private fun TripListItem(
                         },
                     contentScale = ContentScale.Fit
                 )
-
+            }
                 // Scrim for text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.scrim.copy(alpha = 0f),
+                                MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)
+                            ),
+                            startY = 300f
+                        )
+                    )
+            )
+
+            // Selection Overlay
+            if (selectionMode) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0f),
-                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0.7f)
-                                ),
-                                startY = 300f
-                            )
-                        )
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = if (isSelected) 0.3f else 0f))
                 )
-                if (selectionMode) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = if (isSelected) 0.3f else 0f))
-                    )
-                }
-                // Content
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.BottomStart)
-                ) {
-                    Text(
-                        text = trip.name, style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    if (trip.startDate != null && trip.endDate != null) {
-                        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                        val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+            }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = dateRange,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-                if (selectionMode) {
-                    IconToggleButton(
-                        checked = isSelected,
-                        onCheckedChange = { onClick() },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(16.dp)
-                    ) {
-                        if (isSelected) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
-                        } else {
-                            Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected", tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                        }
-                    }
+            // Content Layer
+            val contentColor = if (trip.imageUri != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = if (trip.imageUri != null) Arrangement.Bottom else Arrangement.Center,
+                horizontalAlignment = if (trip.imageUri != null) Alignment.Start else Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = trip.name, style = MaterialTheme.typography.titleLarge,
+                    color = contentColor
+                )
+                if (trip.startDate != null && trip.endDate != null) {
+                    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                    val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = dateRange,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor
+                    )
                 }
             }
-        }
-    } else {
-        val elevation = 1.dp
-        val containerColor = if (isSelected) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                .compositeOver(MaterialTheme.colorScheme.surfaceColorAtElevation(elevation))
-        } else {
-            MaterialTheme.colorScheme.surfaceColorAtElevation(elevation)
-        }
-        val contentColor = if (isSelected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        }
 
-        ElevatedCard(
-            modifier = cardModifier,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = containerColor,
-                contentColor = contentColor
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = trip.name,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    if (trip.startDate != null && trip.endDate != null) {
-                        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                        val dateRange = "${trip.startDate.format(formatter)} - ${trip.endDate.format(formatter)}"
-
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = dateRange,
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-                if (selectionMode) {
-                    IconToggleButton(
-                        checked = isSelected,
-                        onCheckedChange = { onClick() }
-                    ) {
-                        if (isSelected) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
-                        } else {
-                            Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected")
-                        }
+            // Selection Checkbox Layer
+            if (selectionMode) {
+                IconToggleButton(
+                    checked = isSelected,
+                    onCheckedChange = { onClick() },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(16.dp)
+                ) {
+                    if (isSelected) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                    } else {
+                        val iconColor = if (trip.imageUri != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                        Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected", tint = iconColor)
                     }
                 }
             }
@@ -619,7 +582,7 @@ private fun TripsScreenPreview_TripSelected() {
             amount = 1500.0,
             date = LocalDate.now(),
             category = Category(name = "Food", iconRes = 0),
-            paymentMethod = dev.klarkengkoy.triptrack.model.PaymentMethod(name = "Cash", iconRes = 0),
+            paymentMethod = PaymentMethod(name = "Cash", iconRes = 0),
             type = TransactionType.EXPENSE
         ),
         Transaction(
@@ -628,7 +591,7 @@ private fun TripsScreenPreview_TripSelected() {
             amount = 300.0,
             date = LocalDate.now(),
             category = Category(name = "Transport", iconRes = 0),
-            paymentMethod = dev.klarkengkoy.triptrack.model.PaymentMethod(name = "Cash", iconRes = 0),
+            paymentMethod = PaymentMethod(name = "Cash", iconRes = 0),
             type = TransactionType.EXPENSE
         ),
         Transaction(
@@ -637,7 +600,7 @@ private fun TripsScreenPreview_TripSelected() {
             amount = 1000.0,
             date = LocalDate.now().minusDays(1),
             category = Category(name = "Entertainment", iconRes = 0),
-            paymentMethod = dev.klarkengkoy.triptrack.model.PaymentMethod(name = "Cash", iconRes = 0),
+            paymentMethod = PaymentMethod(name = "Cash", iconRes = 0),
             type = TransactionType.EXPENSE
         )
     )
@@ -732,7 +695,7 @@ private fun TripsScreenPreview_SelectionMode() {
         TripsScreenContent(
             uiState = TripsUiState(
                 selectionMode = true,
-                selectedTrips = setOf("2"),
+                selectedTrips = setOf("1"),
                 trips = sampleTrips
             ),
             onSelectTrip = { },

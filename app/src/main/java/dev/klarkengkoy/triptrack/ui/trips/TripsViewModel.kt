@@ -174,17 +174,19 @@ class TripsViewModel @Inject constructor(
 
     fun addTrip() {
         viewModelScope.launch {
+            val addTripState = _uiState.value.addTripUiState
             val newTrip = Trip(
-                name = _uiState.value.addTripUiState.tripName,
-                currency = _uiState.value.addTripUiState.currency,
-                imageUri = _uiState.value.addTripUiState.imageUri,
-                imageOffsetX = _uiState.value.addTripUiState.imageOffsetX,
-                imageOffsetY = _uiState.value.addTripUiState.imageOffsetY,
-                imageScale = _uiState.value.addTripUiState.imageScale,
-                startDate = _uiState.value.addTripUiState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
-                endDate = _uiState.value.addTripUiState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
-                totalBudget = _uiState.value.addTripUiState.totalBudget,
-                dailyBudget = _uiState.value.addTripUiState.dailyBudget
+                name = addTripState.tripName,
+                currency = addTripState.currency,
+                isCurrencyCustom = addTripState.isCurrencyCustom,
+                imageUri = addTripState.imageUri,
+                imageOffsetX = addTripState.imageOffsetX,
+                imageOffsetY = addTripState.imageOffsetY,
+                imageScale = addTripState.imageScale,
+                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                totalBudget = addTripState.totalBudget,
+                dailyBudget = addTripState.dailyBudget
             )
             tripsRepository.addTrip(newTrip)
             _uiState.update { it.copy(addTripUiState = AddTripUiState()) } // Reset the form

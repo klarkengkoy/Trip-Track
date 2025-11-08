@@ -3,6 +3,7 @@ package dev.klarkengkoy.triptrack.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import dev.klarkengkoy.triptrack.data.Converters
 import dev.klarkengkoy.triptrack.model.Trip
 
 @Database(entities = [Trip::class], version = 1, exportSchema = false)
