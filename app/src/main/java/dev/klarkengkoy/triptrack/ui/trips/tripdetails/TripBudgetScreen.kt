@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.trips.addtrip
+package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,22 +10,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,45 +40,29 @@ import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.util.Currency
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTripBudgetScreen(
     modifier: Modifier = Modifier,
-    onNavigateUp: () -> Unit = {},
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Scaffold(
+    AddTripBudgetContent(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
+        totalBudget = uiState.addTripUiState.totalBudget,
+        dailyBudget = uiState.addTripUiState.dailyBudget,
+        currencyCode = uiState.addTripUiState.currency,
+        onTotalBudgetChanged = { viewModel.onTotalBudgetChanged(it) },
+        onDailyBudgetChanged = { viewModel.onDailyBudgetChanged(it) },
+        onNextClicked = onNavigateNext,
+        onSkipClicked = {
+            // Clear any budget info before navigating
+            viewModel.onTotalBudgetChanged("")
+            viewModel.onDailyBudgetChanged("")
+            onNavigateNext()
         }
-    ) { paddingValues ->
-        AddTripBudgetContent(
-            modifier = Modifier.padding(paddingValues),
-            totalBudget = uiState.addTripUiState.totalBudget,
-            dailyBudget = uiState.addTripUiState.dailyBudget,
-            currencyCode = uiState.addTripUiState.currency,
-            onTotalBudgetChanged = { viewModel.onTotalBudgetChanged(it) },
-            onDailyBudgetChanged = { viewModel.onDailyBudgetChanged(it) },
-            onNextClicked = onNavigateNext,
-            onSkipClicked = {
-                // Clear any budget info before navigating
-                viewModel.onTotalBudgetChanged("")
-                viewModel.onDailyBudgetChanged("")
-                onNavigateNext()
-            }
-        )
-    }
+    )
 }
 
 @Composable

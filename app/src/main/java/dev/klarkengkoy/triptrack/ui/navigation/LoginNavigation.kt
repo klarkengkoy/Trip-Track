@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack
+package dev.klarkengkoy.triptrack.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState

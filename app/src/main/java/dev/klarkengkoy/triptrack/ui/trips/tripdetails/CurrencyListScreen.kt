@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.trips.addtrip
+package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -8,17 +8,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,31 +26,15 @@ import androidx.compose.ui.unit.dp
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import java.util.Currency
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CurrencyListScreen(
     modifier: Modifier = Modifier,
-    onNavigateUp: () -> Unit = {},
     onCurrencySelected: (String) -> Unit = {}
 ) {
-    Scaffold(
+    CurrencyListContent(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text("Select Currency") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        CurrencyListContent(
-            modifier = Modifier.padding(paddingValues),
-            onCurrencySelected = onCurrencySelected
-        )
-    }
+        onCurrencySelected = onCurrencySelected
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +75,7 @@ private fun CurrencyListContent(
         onExpandedChange = onActiveChange,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(10.dp),
         shape = SearchBarDefaults.dockedShape,
         colors = colors1,
         tonalElevation = SearchBarDefaults.TonalElevation,

@@ -1,6 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -20,10 +19,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.BottomAppBar
@@ -62,6 +63,7 @@ import dev.klarkengkoy.triptrack.model.PaymentMethod
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.TransactionType
 import dev.klarkengkoy.triptrack.model.Trip
+import dev.klarkengkoy.triptrack.ui.MainViewModel
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -78,19 +80,25 @@ import java.util.Locale
 fun TripsScreen(
     modifier: Modifier = Modifier,
     viewModel: TripsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel,
     onAddTrip: () -> Unit,
-    onAddTransaction: (String) -> Unit
+    onAddTransaction: (String) -> Unit,
+    onEditTrip: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     TripsScreenContent(
         modifier = modifier,
         uiState = uiState,
+        mainViewModel = mainViewModel,
         onSelectTrip = { trip -> viewModel.selectTrip(trip) },
         onUnselectTrip = { viewModel.unselectTrip() },
         onAddTrip = onAddTrip,
         onAddTransaction = {
             uiState.selectedTrip?.let { onAddTransaction(it.id) }
+        },
+        onEditTrip = {
+            uiState.selectedTrip?.let { onEditTrip(it.id) }
         },
         onEnterSelectionMode = { tripId -> viewModel.enterSelectionMode(tripId) },
         onExitSelectionMode = { viewModel.exitSelectionMode() },
@@ -108,10 +116,12 @@ fun TripsScreen(
 private fun TripsScreenContent(
     modifier: Modifier = Modifier,
     uiState: TripsUiState,
+    mainViewModel: MainViewModel,
     onSelectTrip: (Trip) -> Unit,
     onUnselectTrip: () -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: () -> Unit,
+    onEditTrip: () -> Unit,
     onEnterSelectionMode: (String) -> Unit,
     onExitSelectionMode: () -> Unit,
     onToggleTripSelection: (String) -> Unit,
@@ -122,7 +132,7 @@ private fun TripsScreenContent(
     val selectedTrip = uiState.selectedTrip
     val selectionMode = uiState.selectionMode
 
-    BackHandler(enabled = selectedTrip != null || selectionMode) {
+    val onNavigateUp = {
         if (selectionMode) {
             onExitSelectionMode()
         } else {
@@ -130,16 +140,50 @@ private fun TripsScreenContent(
         }
     }
 
+    // Configure the TopAppBar based on the current screen state
+    LaunchedEffect(selectedTrip, selectionMode, uiState.selectedTrips) {
+        mainViewModel.setTopAppBarState(
+            title = {
+                Text(
+                    text = when {
+                        selectionMode -> "Select Trips"
+                        selectedTrip != null -> selectedTrip.name
+                        else -> stringResource(id = R.string.title_trips)
+                    }
+                )
+            },
+            navigationIcon = {
+                if (selectedTrip != null || selectionMode) {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_navigate_up)
+                        )
+                    }
+                }
+            },
+            actions = {
+                if (selectionMode) {
+                    IconToggleButton(checked = uiState.trips.isNotEmpty() && uiState.selectedTrips.size == uiState.trips.size, onCheckedChange = {
+                        if (it) onSelectAllTrips() else onClearSelectedTrips()
+                    }) {
+                        if (uiState.trips.isNotEmpty() && uiState.selectedTrips.size == uiState.trips.size) {
+                            Icon(Icons.Filled.CheckCircle, contentDescription = "Deselect All")
+                        } else {
+                            Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Select All")
+                        }
+                    }
+                } else if (selectedTrip != null) {
+                    IconButton(onClick = onEditTrip) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit Trip")
+                    }
+                }
+            }
+        )
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TripsTopAppBar(
-                selectedTrip = selectedTrip,
-                selectionMode = selectionMode,
-                onSelectAll = onSelectAllTrips,
-                onClearSelection = onClearSelectedTrips,
-                isAllSelected = uiState.trips.isNotEmpty() && uiState.selectedTrips.size == uiState.trips.size
-            )
-
             if (selectedTrip != null) {
                 TripDetailsContent(
                     trip = selectedTrip,
@@ -212,45 +256,6 @@ private fun TripsBottomBar(
     }
 }
 
-@Composable
-private fun TripsTopAppBar(
-    selectedTrip: Trip?,
-    selectionMode: Boolean,
-    onSelectAll: () -> Unit,
-    onClearSelection: () -> Unit,
-    isAllSelected: Boolean
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .height(64.dp)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = if (selectionMode) Arrangement.SpaceBetween else Arrangement.Center
-    ) {
-        Text(
-            text = when {
-                selectionMode -> "Select Trips to Delete"
-                selectedTrip != null -> selectedTrip.name
-                else -> stringResource(id = R.string.title_trips)
-            },
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-        if (selectionMode) {
-            IconToggleButton(checked = isAllSelected, onCheckedChange = {
-                if (it) onSelectAll() else onClearSelection()
-            }) {
-                if (isAllSelected) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = "Deselect All")
-                } else {
-                    Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Select All")
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TripDetailsContent(
@@ -266,7 +271,7 @@ private fun TripDetailsContent(
         } else {
             try {
                 Currency.getInstance(trip.currency).symbol
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 trip.currency // Fallback for safety
             }
         }
@@ -397,7 +402,7 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
     }
 }
 
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TripsListContent(
     trips: List<Trip>,
@@ -432,6 +437,7 @@ private fun TripsListContent(
         }
     }
 }
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -492,7 +498,7 @@ private fun TripListItem(
                     contentScale = ContentScale.Fit
                 )
             }
-                // Scrim for text readability
+            // Scrim for text readability
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -517,7 +523,7 @@ private fun TripListItem(
             }
 
             // Content Layer
-            val contentColor = if (trip.imageUri != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            val contentColor = MaterialTheme.colorScheme.onSurface
 
             Column(
                 modifier = Modifier
@@ -555,8 +561,7 @@ private fun TripListItem(
                     if (isSelected) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
                     } else {
-                        val iconColor = if (trip.imageUri != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                        Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected", tint = iconColor)
+                        Icon(Icons.Filled.RadioButtonUnchecked, contentDescription = "Not Selected", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -606,16 +611,19 @@ private fun TripsScreenPreview_TripSelected() {
     )
 
     TripTrackTheme {
+        val uiState = TripsUiState(
+            selectedTrip = sampleTrip,
+            trips = listOf(sampleTrip),
+            transactionsByTrip = mapOf(sampleTrip.id to sampleTransactions)
+        )
         TripsScreenContent(
-            uiState = TripsUiState(
-                selectedTrip = sampleTrip,
-                trips = listOf(sampleTrip),
-                transactionsByTrip = mapOf(sampleTrip.id to sampleTransactions)
-            ),
+            uiState = uiState,
+            mainViewModel = hiltViewModel(),
             onSelectTrip = { },
             onUnselectTrip = { },
             onAddTrip = { },
             onAddTransaction = { },
+            onEditTrip = {},
             onEnterSelectionMode = {},
             onExitSelectionMode = {},
             onToggleTripSelection = {},
@@ -654,10 +662,12 @@ private fun TripsScreenPreview_NoTripSelected() {
                 trips = sampleTrips,
                 transactionsByTrip = emptyMap()
             ),
+            mainViewModel = hiltViewModel(),
             onSelectTrip = { },
             onUnselectTrip = { },
             onAddTrip = { },
             onAddTransaction = { },
+            onEditTrip = {},
             onEnterSelectionMode = {},
             onExitSelectionMode = {},
             onToggleTripSelection = {},
@@ -698,10 +708,12 @@ private fun TripsScreenPreview_SelectionMode() {
                 selectedTrips = setOf("1"),
                 trips = sampleTrips
             ),
+            mainViewModel = hiltViewModel(),
             onSelectTrip = { },
             onUnselectTrip = { },
             onAddTrip = { },
             onAddTransaction = { },
+            onEditTrip = {},
             onEnterSelectionMode = {},
             onExitSelectionMode = {},
             onToggleTripSelection = {},

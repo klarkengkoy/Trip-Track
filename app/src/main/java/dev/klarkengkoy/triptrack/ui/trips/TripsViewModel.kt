@@ -1,5 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+
+private const val TAG = "TripsViewModel"
 
 data class TripsUiState(
     val selectedTrip: Trip? = null,
@@ -60,6 +63,33 @@ class TripsViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    fun populateTripDetails(tripId: String) {
+        viewModelScope.launch {
+            val trip = tripsRepository.getTrip(tripId)
+            if (trip != null) {
+                Log.d(TAG, "Populating details for trip: $trip")
+                _uiState.update {
+                    it.copy(
+                        selectedTrip = trip, // Set the selected trip for context
+                        addTripUiState = it.addTripUiState.copy(
+                            tripName = trip.name,
+                            imageUri = trip.imageUri,
+                            imageOffsetX = trip.imageOffsetX,
+                            imageOffsetY = trip.imageOffsetY,
+                            imageScale = trip.imageScale,
+                            startDate = trip.startDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
+                            endDate = trip.endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
+                            currency = trip.currency,
+                            isCurrencyCustom = trip.isCurrencyCustom,
+                            totalBudget = trip.totalBudget,
+                            dailyBudget = trip.dailyBudget
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     fun onTripNameChanged(newName: String) {
         _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(tripName = newName)) }
     }
@@ -88,13 +118,33 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onDatesChanged(startDate: Long?, endDate: Long?) {
-        _uiState.update {
-            it.copy(
-                addTripUiState = it.addTripUiState.copy(
-                    startDate = startDate,
-                    endDate = endDate
-                )
+        _uiState.update { currentState ->
+            var updatedAddTripState = currentState.addTripUiState.copy(
+                startDate = startDate,
+                endDate = endDate
             )
+
+            // After updating dates, try to recalculate budget
+            if (startDate != null && endDate != null) {
+                val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                val days = ChronoUnit.DAYS.between(start, end) + 1
+
+                if (days > 0) {
+                    if (updatedAddTripState.totalBudget != null) {
+                        // Recalculate daily budget from total budget
+                        updatedAddTripState = updatedAddTripState.copy(
+                            dailyBudget = updatedAddTripState.totalBudget / days
+                        )
+                    } else if (updatedAddTripState.dailyBudget != null) {
+                        // Recalculate total budget from daily budget
+                        updatedAddTripState = updatedAddTripState.copy(
+                            totalBudget = updatedAddTripState.dailyBudget * days
+                        )
+                    }
+                }
+            }
+            currentState.copy(addTripUiState = updatedAddTripState)
         }
     }
 
@@ -171,6 +221,9 @@ class TripsViewModel @Inject constructor(
         }
     }
 
+    fun resetAddTripState() {
+        _uiState.update { it.copy(addTripUiState = AddTripUiState()) }
+    }
 
     fun addTrip() {
         viewModelScope.launch {
@@ -189,7 +242,28 @@ class TripsViewModel @Inject constructor(
                 dailyBudget = addTripState.dailyBudget
             )
             tripsRepository.addTrip(newTrip)
-            _uiState.update { it.copy(addTripUiState = AddTripUiState()) } // Reset the form
+            resetAddTripState()
+        }
+    }
+
+    fun updateTrip() {
+        viewModelScope.launch {
+            val addTripState = _uiState.value.addTripUiState
+            val updatedTrip = _uiState.value.selectedTrip!!.copy(
+                name = addTripState.tripName,
+                currency = addTripState.currency,
+                isCurrencyCustom = addTripState.isCurrencyCustom,
+                imageUri = addTripState.imageUri,
+                imageOffsetX = addTripState.imageOffsetX,
+                imageOffsetY = addTripState.imageOffsetY,
+                imageScale = addTripState.imageScale,
+                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                totalBudget = addTripState.totalBudget,
+                dailyBudget = addTripState.dailyBudget
+            )
+            tripsRepository.updateTrip(updatedTrip)
+            resetAddTripState()
         }
     }
 

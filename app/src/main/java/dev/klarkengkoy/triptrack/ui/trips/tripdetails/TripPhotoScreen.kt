@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.trips.addtrip
+package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import android.content.Intent
 import android.net.Uri
@@ -16,19 +16,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,11 +53,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTripPhotoScreen(
     modifier: Modifier = Modifier,
-    onNavigateUp: () -> Unit,
     onNavigateNext: () -> Unit,
     viewModel: TripsViewModel
 ) {
@@ -76,47 +71,37 @@ fun AddTripPhotoScreen(
         viewModel.onImageScaleChanged(scale)
     }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        saveState()
-                        onNavigateUp()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
+    // Save the state when the user leaves the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            saveState()
         }
-    ) { paddingValues ->
-        AddTripPhotoContent(
-            modifier = Modifier.padding(paddingValues),
-            addTripUiState = uiState.addTripUiState,
-            scale = scale,
-            offset = offset,
-            onTransform = { pan, zoom ->
-                scale = (scale * zoom).coerceIn(1f, 5f)
-                offset += pan
-            },
-            onImageUriChanged = { uri ->
-                viewModel.onImageUriChanged(uri?.toString())
-                // Reset state in the parent when a new image is picked
-                scale = 1f
-                offset = Offset.Zero
-            },
-            onNextClicked = {
-                saveState()
-                onNavigateNext()
-            },
-            onSkipClicked = {
-                viewModel.onImageUriChanged(null) // Clear the image
-                onNavigateNext()
-            }
-        )
     }
+
+    AddTripPhotoContent(
+        modifier = modifier,
+        addTripUiState = uiState.addTripUiState,
+        scale = scale,
+        offset = offset,
+        onTransform = { pan, zoom ->
+            scale = (scale * zoom).coerceIn(1f, 5f)
+            offset += pan
+        },
+        onImageUriChanged = { uri ->
+            viewModel.onImageUriChanged(uri?.toString())
+            // Reset state when a new image is picked
+            scale = 1f
+            offset = Offset.Zero
+        },
+        onNextClicked = {
+            saveState()
+            onNavigateNext()
+        },
+        onSkipClicked = {
+            viewModel.onImageUriChanged(null) // Clear the image
+            onNavigateNext()
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

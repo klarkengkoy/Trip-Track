@@ -35,6 +35,11 @@ class TripsRepositoryImpl @Inject constructor(
         userTripsCollection?.document(trip.id)?.set(FirebaseTrip.fromTrip(trip))?.await()
     }
 
+    override suspend fun updateTrip(trip: Trip) {
+        tripDao.insertTrip(trip)
+        userTripsCollection?.document(trip.id)?.set(FirebaseTrip.fromTrip(trip))?.await()
+    }
+
     override suspend fun getTrip(tripId: String): Trip? {
         return tripDao.getTripById(tripId)
     }

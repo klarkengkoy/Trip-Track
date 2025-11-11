@@ -9,6 +9,8 @@ interface TripsRepository {
 
     suspend fun addTrip(trip: Trip)
 
+    suspend fun updateTrip(trip: Trip)
+
     suspend fun getTrip(tripId: String): Trip?
 
     suspend fun deleteTrip(tripId: String)

@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.trips.addtrip
+package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -8,22 +8,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -32,13 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
@@ -52,29 +43,28 @@ import java.util.Currency
 
 @Composable
 fun AddTripSummaryScreen(
-    onNavigateUp: () -> Unit,
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit,
-    viewModel: TripsViewModel
+    viewModel: TripsViewModel,
+    saveButtonText: String
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AddTripSummaryContent(
         addTripUiState = uiState.addTripUiState,
-        onNavigateUp = onNavigateUp,
         onSaveTrip = onSaveTrip,
-        onDiscard = onDiscard
+        onDiscard = onDiscard,
+        saveButtonText = saveButtonText
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTripSummaryContent(
     modifier: Modifier = Modifier,
     addTripUiState: AddTripUiState,
-    onNavigateUp: () -> Unit,
     onSaveTrip: () -> Unit,
-    onDiscard: () -> Unit
+    onDiscard: () -> Unit,
+    saveButtonText: String
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
@@ -130,131 +120,114 @@ private fun AddTripSummaryContent(
         }
     }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_navigate_up)
-                        )
-                    }
-                }
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Review your trip",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 24.dp),
+                color = colorScheme.onSurface
             )
-        }
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Review your trip",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 24.dp),
-                    color = colorScheme.onSurface
-                )
 
-                if (addTripUiState.imageUri != null) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            AsyncImage(
-                                model = addTripUiState.imageUri,
-                                contentDescription = "Cover photo for ${addTripUiState.tripName}",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .graphicsLayer {
-                                        scaleX = addTripUiState.imageScale
-                                        scaleY = addTripUiState.imageScale
-                                        translationX = addTripUiState.imageOffsetX
-                                        translationY = addTripUiState.imageOffsetY
-                                    },
-                                contentScale = ContentScale.Fit
-                            )
+            if (addTripUiState.imageUri != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = addTripUiState.imageUri,
+                            contentDescription = "Cover photo for ${addTripUiState.tripName}",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    scaleX = addTripUiState.imageScale
+                                    scaleY = addTripUiState.imageScale
+                                    translationX = addTripUiState.imageOffsetX
+                                    translationY = addTripUiState.imageOffsetY
+                                },
+                            contentScale = ContentScale.Fit
+                        )
 
-                            // Scrim for text readability
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            colors = listOf(
-                                                colorScheme.scrim.copy(alpha = 0f),
-                                                colorScheme.scrim.copy(alpha = 0.7f)
-                                            ),
-                                            startY = 300f
-                                        )
+                        // Scrim for text readability
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            colorScheme.scrim.copy(alpha = 0f),
+                                            colorScheme.scrim.copy(alpha = 0.7f)
+                                        ),
+                                        startY = 300f
                                     )
+                                )
+                        )
+                        // Content
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.BottomStart)
+                        ) {
+                            Text(
+                                text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                color = colorScheme.onPrimaryContainer
                             )
-                            // Content
-                            Column(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .align(Alignment.BottomStart)
-                            ) {
+                            if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
+                                val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                                val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val dateRange = "${start.format(formatter)} - ${end.format(formatter)}"
+
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                    text = dateRange,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = colorScheme.onPrimaryContainer
                                 )
-                                if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
-                                    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                                    val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                    val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                    val dateRange = "${start.format(formatter)} - ${end.format(formatter)}"
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = dateRange,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (summaryItems.isNotEmpty()) {
-                    ElevatedCard(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-                        Column {
-                            summaryItems.forEachIndexed { index, (label, value) ->
-                                SummaryListItem(label = label, value = value)
-                                if (index < summaryItems.size - 1) {
-                                    HorizontalDivider()
-                                }
                             }
                         }
                     }
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+            if (summaryItems.isNotEmpty()) {
+                ElevatedCard(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                    Column {
+                        summaryItems.forEachIndexed { index, (label, value) ->
+                            SummaryListItem(label = label, value = value)
+                            if (index < summaryItems.size - 1) {
+                                HorizontalDivider()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = onSaveTrip,
+                enabled = addTripUiState.tripName.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
-                    onClick = onSaveTrip,
-                    enabled = addTripUiState.tripName.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Save Trip")
-                }
-                TextButton(onClick = onDiscard) {
-                    Text("Discard")
-                }
+                Text(saveButtonText)
+            }
+            TextButton(onClick = onDiscard) {
+                Text("Discard")
             }
         }
     }
@@ -292,11 +265,11 @@ private fun AddTripSummaryScreenPreview_Full() {
                 endDate = Instant.now().plus(7, ChronoUnit.DAYS).toEpochMilli(),
                 totalBudget = 200000.0,
                 dailyBudget = 25000.0,
-                imageUri = "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                imageUri = "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&id=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             ),
-            onNavigateUp = {},
             onSaveTrip = {},
-            onDiscard = {}
+            onDiscard = {},
+            saveButtonText = "Save Trip"
         )
     }
 }
@@ -314,9 +287,9 @@ private fun AddTripSummaryScreenPreview_Partial() {
                 totalBudget = 500.0,
                 dailyBudget = null
             ),
-            onNavigateUp = {},
             onSaveTrip = {},
-            onDiscard = {}
+            onDiscard = {},
+            saveButtonText = "Save Trip"
         )
     }
 }

@@ -1,4 +1,4 @@
-package dev.klarkengkoy.triptrack.ui.trips
+package dev.klarkengkoy.triptrack.ui.trips.transaction
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
