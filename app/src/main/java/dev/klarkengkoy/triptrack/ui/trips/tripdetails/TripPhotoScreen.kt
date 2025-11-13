@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
-import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
+import dev.klarkengkoy.triptrack.ui.trips.TripUiState
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.time.Instant
 import java.time.ZoneId
@@ -54,16 +54,16 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun AddTripPhotoScreen(
+fun TripPhotoScreen(
     modifier: Modifier = Modifier,
     onNavigateNext: () -> Unit,
     viewModel: TripsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    var scale by remember(uiState.addTripUiState.imageScale) { mutableFloatStateOf(uiState.addTripUiState.imageScale) }
-    var offset by remember(uiState.addTripUiState.imageOffsetX, uiState.addTripUiState.imageOffsetY) {
-        mutableStateOf(Offset(uiState.addTripUiState.imageOffsetX, uiState.addTripUiState.imageOffsetY))
+    var scale by remember(uiState.tripUiState.imageScale) { mutableFloatStateOf(uiState.tripUiState.imageScale) }
+    var offset by remember(uiState.tripUiState.imageOffsetX, uiState.tripUiState.imageOffsetY) {
+        mutableStateOf(Offset(uiState.tripUiState.imageOffsetX, uiState.tripUiState.imageOffsetY))
     }
 
     fun saveState() {
@@ -80,7 +80,7 @@ fun AddTripPhotoScreen(
 
     AddTripPhotoContent(
         modifier = modifier,
-        addTripUiState = uiState.addTripUiState,
+        tripUiState = uiState.tripUiState,
         scale = scale,
         offset = offset,
         onTransform = { pan, zoom ->
@@ -108,7 +108,7 @@ fun AddTripPhotoScreen(
 @Composable
 private fun AddTripPhotoContent(
     modifier: Modifier = Modifier,
-    addTripUiState: AddTripUiState,
+    tripUiState: TripUiState,
     scale: Float,
     offset: Offset,
     onTransform: (pan: Offset, zoom: Float) -> Unit,
@@ -161,9 +161,9 @@ private fun AddTripPhotoContent(
                             }
                         }
                 ) {
-                    if (addTripUiState.imageUri != null) {
+                    if (tripUiState.imageUri != null) {
                         AsyncImage(
-                            model = addTripUiState.imageUri,
+                            model = tripUiState.imageUri,
                             contentDescription = "Cover photo",
                             modifier = Modifier
                                 .fillMaxSize()
@@ -196,13 +196,13 @@ private fun AddTripPhotoContent(
                                 .align(Alignment.BottomStart)
                         ) {
                             Text(
-                                text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                text = tripUiState.tripName, style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
-                            if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
+                            if (tripUiState.startDate != null && tripUiState.endDate != null) {
                                 val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                                val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val start = Instant.ofEpochMilli(tripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val end = Instant.ofEpochMilli(tripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
                                 val dateRange = "${start.format(formatter)} - ${end.format(formatter)}"
 
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -262,7 +262,7 @@ private fun AddTripPhotoContent(
 private fun AddTripPhotoScreenPreview() {
     TripTrackTheme {
         AddTripPhotoContent(
-            addTripUiState = AddTripUiState(
+            tripUiState = TripUiState(
                 tripName = "Trip to Japan",
                 startDate = Instant.now().toEpochMilli(),
                 endDate = Instant.now().plusMillis(1000 * 60 * 60 * 24 * 7).toEpochMilli(),
@@ -283,7 +283,7 @@ private fun AddTripPhotoScreenPreview() {
 private fun AddTripPhotoScreenPreview_WithImage() {
     TripTrackTheme {
         AddTripPhotoContent(
-            addTripUiState = AddTripUiState(
+            tripUiState = TripUiState(
                 tripName = "Trip to Japan",
                 startDate = Instant.now().toEpochMilli(),
                 endDate = Instant.now().plusMillis(1000 * 60 * 60 * 24 * 7).toEpochMilli(),

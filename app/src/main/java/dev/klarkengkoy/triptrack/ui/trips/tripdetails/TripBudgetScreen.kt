@@ -41,7 +41,7 @@ import java.util.Currency
 import java.util.Locale
 
 @Composable
-fun AddTripBudgetScreen(
+fun TripBudgetScreen(
     modifier: Modifier = Modifier,
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
@@ -50,9 +50,9 @@ fun AddTripBudgetScreen(
 
     AddTripBudgetContent(
         modifier = modifier,
-        totalBudget = uiState.addTripUiState.totalBudget,
-        dailyBudget = uiState.addTripUiState.dailyBudget,
-        currencyCode = uiState.addTripUiState.currency,
+        totalBudget = uiState.tripUiState.totalBudget,
+        dailyBudget = uiState.tripUiState.dailyBudget,
+        currencyCode = uiState.tripUiState.currency,
         onTotalBudgetChanged = { viewModel.onTotalBudgetChanged(it) },
         onDailyBudgetChanged = { viewModel.onDailyBudgetChanged(it) },
         onNextClicked = onNavigateNext,

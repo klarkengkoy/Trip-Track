@@ -26,23 +26,23 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 
 @Composable
-fun AddTripNameScreen(
+fun TripNameScreen(
     modifier: Modifier = Modifier,
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    AddTripNameContent(
+    TripNameContent(
         modifier = modifier,
-        name = uiState.addTripUiState.tripName,
+        name = uiState.tripUiState.tripName,
         onNameChanged = { viewModel.onTripNameChanged(it) },
         onNextClicked = onNavigateNext
     )
 }
 
 @Composable
-private fun AddTripNameContent(
+private fun TripNameContent(
     modifier: Modifier = Modifier,
     name: String,
     onNameChanged: (String) -> Unit,
@@ -116,9 +116,9 @@ private fun AddTripNameContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun AddTripNameScreenPreview() {
+private fun TripNameScreenPreview() {
     TripTrackTheme {
-        AddTripNameContent(
+        TripNameContent(
             name = "",
             onNameChanged = {},
             onNextClicked = {}
@@ -128,9 +128,9 @@ private fun AddTripNameScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun AddTripNameScreenPreview_WithName() {
+private fun TripNameScreenPreview_WithName() {
     TripTrackTheme {
-        AddTripNameContent(
+        TripNameContent(
             name = "Trip to Japan",
             onNameChanged = {},
             onNextClicked = {}

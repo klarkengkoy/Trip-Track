@@ -25,7 +25,7 @@ data class TripsUiState(
     val selectedTrip: Trip? = null,
     val trips: List<Trip> = emptyList(),
     val transactionsByTrip: Map<String, List<Transaction>> = emptyMap(),
-    val addTripUiState: AddTripUiState = AddTripUiState(),
+    val tripUiState: TripUiState = TripUiState(),
     val selectionMode: Boolean = false,
     val selectedTrips: Set<String> = emptySet()
 ) {
@@ -33,7 +33,7 @@ data class TripsUiState(
         get() = selectedTrip?.let { transactionsByTrip[it.id] }.orEmpty()
 }
 
-data class AddTripUiState(
+data class TripUiState(
     val tripName: String = "",
     val imageUri: String? = null,
     val imageOffsetX: Float = 0f,
@@ -71,7 +71,7 @@ class TripsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         selectedTrip = trip, // Set the selected trip for context
-                        addTripUiState = it.addTripUiState.copy(
+                        tripUiState = it.tripUiState.copy(
                             tripName = trip.name,
                             imageUri = trip.imageUri,
                             imageOffsetX = trip.imageOffsetX,
@@ -91,17 +91,17 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onTripNameChanged(newName: String) {
-        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(tripName = newName)) }
+        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(tripName = newName)) }
     }
 
     fun onImageUriChanged(newImageUri: String?) {
-        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(imageUri = newImageUri)) }
+        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(imageUri = newImageUri)) }
     }
 
     fun onImageOffsetChanged(x: Float, y: Float) {
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(
+                tripUiState = it.tripUiState.copy(
                     imageOffsetX = x,
                     imageOffsetY = y
                 )
@@ -112,14 +112,14 @@ class TripsViewModel @Inject constructor(
     fun onImageScaleChanged(scale: Float) {
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(imageScale = scale)
+                tripUiState = it.tripUiState.copy(imageScale = scale)
             )
         }
     }
 
     fun onDatesChanged(startDate: Long?, endDate: Long?) {
         _uiState.update { currentState ->
-            var updatedAddTripState = currentState.addTripUiState.copy(
+            var updatedAddTripState = currentState.tripUiState.copy(
                 startDate = startDate,
                 endDate = endDate
             )
@@ -144,19 +144,19 @@ class TripsViewModel @Inject constructor(
                     }
                 }
             }
-            currentState.copy(addTripUiState = updatedAddTripState)
+            currentState.copy(tripUiState = updatedAddTripState)
         }
     }
 
     @Deprecated("Use onCurrencySelected or onCustomCurrencyChanged instead")
     fun onCurrencyChanged(newCurrency: String) {
-        _uiState.update { it.copy(addTripUiState = it.addTripUiState.copy(currency = newCurrency)) }
+        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(currency = newCurrency)) }
     }
 
     fun onCurrencySelected(newCurrency: String) {
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(
+                tripUiState = it.tripUiState.copy(
                     currency = newCurrency,
                     isCurrencyCustom = false
                 )
@@ -167,7 +167,7 @@ class TripsViewModel @Inject constructor(
     fun onCustomCurrencyChanged(newCurrency: String) {
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(
+                tripUiState = it.tripUiState.copy(
                     currency = newCurrency,
                     isCurrencyCustom = true
                 )
@@ -177,7 +177,7 @@ class TripsViewModel @Inject constructor(
 
     fun onTotalBudgetChanged(newBudget: String) {
         val totalBudget = newBudget.toDoubleOrNull()
-        val addTripUiState = _uiState.value.addTripUiState
+        val addTripUiState = _uiState.value.tripUiState
 
         val dailyBudget = if (totalBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
             val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -190,7 +190,7 @@ class TripsViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(
+                tripUiState = it.tripUiState.copy(
                     totalBudget = totalBudget,
                     dailyBudget = dailyBudget
                 )
@@ -200,7 +200,7 @@ class TripsViewModel @Inject constructor(
 
     fun onDailyBudgetChanged(newBudget: String) {
         val dailyBudget = newBudget.toDoubleOrNull()
-        val addTripUiState = _uiState.value.addTripUiState
+        val addTripUiState = _uiState.value.tripUiState
 
         val totalBudget = if (dailyBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
             val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
@@ -213,7 +213,7 @@ class TripsViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
-                addTripUiState = it.addTripUiState.copy(
+                tripUiState = it.tripUiState.copy(
                     totalBudget = totalBudget,
                     dailyBudget = dailyBudget
                 )
@@ -222,12 +222,12 @@ class TripsViewModel @Inject constructor(
     }
 
     fun resetAddTripState() {
-        _uiState.update { it.copy(addTripUiState = AddTripUiState()) }
+        _uiState.update { it.copy(tripUiState = TripUiState()) }
     }
 
     fun addTrip() {
         viewModelScope.launch {
-            val addTripState = _uiState.value.addTripUiState
+            val addTripState = _uiState.value.tripUiState
             val newTrip = Trip(
                 name = addTripState.tripName,
                 currency = addTripState.currency,
@@ -248,7 +248,7 @@ class TripsViewModel @Inject constructor(
 
     fun updateTrip() {
         viewModelScope.launch {
-            val addTripState = _uiState.value.addTripUiState
+            val addTripState = _uiState.value.tripUiState
             val updatedTrip = _uiState.value.selectedTrip!!.copy(
                 name = addTripState.tripName,
                 currency = addTripState.currency,

@@ -42,7 +42,7 @@ private const val TAG = "AddTripDates"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTripDatesScreen(
+fun TripDatesScreen(
     modifier: Modifier = Modifier,
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
@@ -50,24 +50,24 @@ fun AddTripDatesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val (showDatePicker, setShowDatePicker) = remember { mutableStateOf(false) }
     val dateRangePickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = uiState.addTripUiState.startDate,
-        initialSelectedEndDateMillis = uiState.addTripUiState.endDate
+        initialSelectedStartDateMillis = uiState.tripUiState.startDate,
+        initialSelectedEndDateMillis = uiState.tripUiState.endDate
     )
 
     // Sync the picker state with the ViewModel state when the screen first loads
-    LaunchedEffect(uiState.addTripUiState.startDate, uiState.addTripUiState.endDate) {
-        if (uiState.addTripUiState.startDate != null) {
+    LaunchedEffect(uiState.tripUiState.startDate, uiState.tripUiState.endDate) {
+        if (uiState.tripUiState.startDate != null) {
             dateRangePickerState.setSelection(
-                startDateMillis = uiState.addTripUiState.startDate,
-                endDateMillis = uiState.addTripUiState.endDate
+                startDateMillis = uiState.tripUiState.startDate,
+                endDateMillis = uiState.tripUiState.endDate
             )
         }
     }
 
     AddTripDatesContent(
         modifier = modifier,
-        startDateMillis = uiState.addTripUiState.startDate,
-        endDateMillis = uiState.addTripUiState.endDate,
+        startDateMillis = uiState.tripUiState.startDate,
+        endDateMillis = uiState.tripUiState.endDate,
         onAddDatesClicked = { setShowDatePicker(true) },
         onNextClicked = onNavigateNext,
         onSkipClicked = {

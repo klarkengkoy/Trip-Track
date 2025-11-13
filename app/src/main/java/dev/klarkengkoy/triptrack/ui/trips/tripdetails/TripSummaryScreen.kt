@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
-import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
+import dev.klarkengkoy.triptrack.ui.trips.TripUiState
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.text.NumberFormat
 import java.time.Instant
@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Currency
 
 @Composable
-fun AddTripSummaryScreen(
+fun TripSummaryScreen(
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit,
     viewModel: TripsViewModel,
@@ -51,7 +51,7 @@ fun AddTripSummaryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AddTripSummaryContent(
-        addTripUiState = uiState.addTripUiState,
+        tripUiState = uiState.tripUiState,
         onSaveTrip = onSaveTrip,
         onDiscard = onDiscard,
         saveButtonText = saveButtonText
@@ -61,7 +61,7 @@ fun AddTripSummaryScreen(
 @Composable
 private fun AddTripSummaryContent(
     modifier: Modifier = Modifier,
-    addTripUiState: AddTripUiState,
+    tripUiState: TripUiState,
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit,
     saveButtonText: String
@@ -69,15 +69,15 @@ private fun AddTripSummaryContent(
     val colorScheme = MaterialTheme.colorScheme
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
-    val summaryItems = remember(addTripUiState) {
-        val currencySymbol = if (addTripUiState.currency.isNotBlank()) {
-            if (addTripUiState.isCurrencyCustom) {
-                addTripUiState.currency
+    val summaryItems = remember(tripUiState) {
+        val currencySymbol = if (tripUiState.currency.isNotBlank()) {
+            if (tripUiState.isCurrencyCustom) {
+                tripUiState.currency
             } else {
                 try {
-                    Currency.getInstance(addTripUiState.currency).symbol
+                    Currency.getInstance(tripUiState.currency).symbol
                 } catch (_: Exception) {
-                    addTripUiState.currency
+                    tripUiState.currency
                 }
             }
         } else {
@@ -85,35 +85,35 @@ private fun AddTripSummaryContent(
         }
 
         buildList {
-            if (addTripUiState.tripName.isNotBlank()) {
-                add("Trip Name" to addTripUiState.tripName)
+            if (tripUiState.tripName.isNotBlank()) {
+                add("Trip Name" to tripUiState.tripName)
             }
-            if (addTripUiState.currency.isNotBlank()) {
-                val currencyLabel = if (addTripUiState.isCurrencyCustom) {
-                    addTripUiState.currency
+            if (tripUiState.currency.isNotBlank()) {
+                val currencyLabel = if (tripUiState.isCurrencyCustom) {
+                    tripUiState.currency
                 } else {
                     try {
-                        val currency = Currency.getInstance(addTripUiState.currency)
+                        val currency = Currency.getInstance(tripUiState.currency)
                         "${currency.displayName} ($currencySymbol)"
                     } catch (_: Exception) {
-                        addTripUiState.currency // Fallback to code
+                        tripUiState.currency // Fallback to code
                     }
                 }
                 add("Currency" to currencyLabel)
             }
-            addTripUiState.startDate?.let {
+            tripUiState.startDate?.let {
                 val formatted = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)
                 add("Start Date" to formatted)
             }
-            addTripUiState.endDate?.let {
+            tripUiState.endDate?.let {
                 val formatted = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)
                 add("End Date" to formatted)
             }
-            addTripUiState.totalBudget?.let {
+            tripUiState.totalBudget?.let {
                 val numberFormat = NumberFormat.getNumberInstance()
                 add("Total Budget" to "$currencySymbol ${numberFormat.format(it)}")
             }
-            addTripUiState.dailyBudget?.let {
+            tripUiState.dailyBudget?.let {
                 val numberFormat = NumberFormat.getNumberInstance()
                 add("Daily Budget" to "$currencySymbol ${numberFormat.format(it)}")
             }
@@ -135,7 +135,7 @@ private fun AddTripSummaryContent(
                 color = colorScheme.onSurface
             )
 
-            if (addTripUiState.imageUri != null) {
+            if (tripUiState.imageUri != null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,15 +143,15 @@ private fun AddTripSummaryContent(
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         AsyncImage(
-                            model = addTripUiState.imageUri,
-                            contentDescription = "Cover photo for ${addTripUiState.tripName}",
+                            model = tripUiState.imageUri,
+                            contentDescription = "Cover photo for ${tripUiState.tripName}",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer {
-                                    scaleX = addTripUiState.imageScale
-                                    scaleY = addTripUiState.imageScale
-                                    translationX = addTripUiState.imageOffsetX
-                                    translationY = addTripUiState.imageOffsetY
+                                    scaleX = tripUiState.imageScale
+                                    scaleY = tripUiState.imageScale
+                                    translationX = tripUiState.imageOffsetX
+                                    translationY = tripUiState.imageOffsetY
                                 },
                             contentScale = ContentScale.Fit
                         )
@@ -177,13 +177,13 @@ private fun AddTripSummaryContent(
                                 .align(Alignment.BottomStart)
                         ) {
                             Text(
-                                text = addTripUiState.tripName, style = MaterialTheme.typography.titleLarge,
+                                text = tripUiState.tripName, style = MaterialTheme.typography.titleLarge,
                                 color = colorScheme.onPrimaryContainer
                             )
-                            if (addTripUiState.startDate != null && addTripUiState.endDate != null) {
+                            if (tripUiState.startDate != null && tripUiState.endDate != null) {
                                 val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                                val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                                val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val start = Instant.ofEpochMilli(tripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                                val end = Instant.ofEpochMilli(tripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
                                 val dateRange = "${start.format(formatter)} - ${end.format(formatter)}"
 
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -221,7 +221,7 @@ private fun AddTripSummaryContent(
         ) {
             Button(
                 onClick = onSaveTrip,
-                enabled = addTripUiState.tripName.isNotBlank(),
+                enabled = tripUiState.tripName.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(saveButtonText)
@@ -258,7 +258,7 @@ private fun SummaryListItem(label: String, value: String) {
 private fun AddTripSummaryScreenPreview_Full() {
     TripTrackTheme {
         AddTripSummaryContent(
-            addTripUiState = AddTripUiState(
+            tripUiState = TripUiState(
                 tripName = "Tokyo Adventure",
                 currency = "JPY",
                 startDate = Instant.now().toEpochMilli(),
@@ -279,7 +279,7 @@ private fun AddTripSummaryScreenPreview_Full() {
 private fun AddTripSummaryScreenPreview_Partial() {
     TripTrackTheme {
         AddTripSummaryContent(
-            addTripUiState = AddTripUiState(
+            tripUiState = TripUiState(
                 tripName = "Weekend Getaway",
                 currency = "USD",
                 startDate = null,

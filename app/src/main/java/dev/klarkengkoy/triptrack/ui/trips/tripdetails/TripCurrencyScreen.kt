@@ -28,11 +28,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
-import dev.klarkengkoy.triptrack.ui.trips.AddTripUiState
+import dev.klarkengkoy.triptrack.ui.trips.TripUiState
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 
 @Composable
-fun AddTripCurrencyScreen(
+fun TripCurrencyScreen(
     modifier: Modifier = Modifier,
     onNavigateNext: () -> Unit = {},
     onCurrencyClick: () -> Unit = {},
@@ -40,9 +40,9 @@ fun AddTripCurrencyScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    AddTripCurrencyContent(
+    TripCurrencyContent(
         modifier = modifier,
-        addTripUiState = uiState.addTripUiState,
+        tripUiState = uiState.tripUiState,
         onCurrencyClick = onCurrencyClick,
         onNextClicked = onNavigateNext,
         onCustomCurrencyChanged = { viewModel.onCustomCurrencyChanged(it) }
@@ -50,9 +50,9 @@ fun AddTripCurrencyScreen(
 }
 
 @Composable
-private fun AddTripCurrencyContent(
+private fun TripCurrencyContent(
     modifier: Modifier = Modifier,
-    addTripUiState: AddTripUiState,
+    tripUiState: TripUiState,
     onCurrencyClick: () -> Unit,
     onNextClicked: () -> Unit,
     onCustomCurrencyChanged: (String) -> Unit
@@ -88,10 +88,10 @@ private fun AddTripCurrencyContent(
                     ),
                     headlineContent = { Text("Currency", style = MaterialTheme.typography.bodyLarge) },
                     trailingContent = {
-                        val currencyText = if (addTripUiState.isCurrencyCustom || addTripUiState.currency.isBlank()) {
+                        val currencyText = if (tripUiState.isCurrencyCustom || tripUiState.currency.isBlank()) {
                             "Select"
                         } else {
-                            addTripUiState.currency
+                            tripUiState.currency
                         }
                         Text(
                             text = currencyText, 
@@ -130,7 +130,7 @@ private fun AddTripCurrencyContent(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                val customCurrency = if (addTripUiState.isCurrencyCustom) addTripUiState.currency else ""
+                val customCurrency = if (tripUiState.isCurrencyCustom) tripUiState.currency else ""
                 BasicTextField(
                     value = customCurrency,
                     onValueChange = onCustomCurrencyChanged,
@@ -165,7 +165,7 @@ private fun AddTripCurrencyContent(
 
         Button(
             onClick = onNextClicked,
-            enabled = addTripUiState.currency.isNotEmpty(),
+            enabled = tripUiState.currency.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -178,10 +178,10 @@ private fun AddTripCurrencyContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun AddTripCurrencyScreenPreview() {
+private fun TripCurrencyScreenPreview() {
     TripTrackTheme {
-        AddTripCurrencyContent(
-            addTripUiState = AddTripUiState(currency = "USD"),
+        TripCurrencyContent(
+            tripUiState = TripUiState(currency = "USD"),
             onCurrencyClick = {},
             onNextClicked = {},
             onCustomCurrencyChanged = {}
