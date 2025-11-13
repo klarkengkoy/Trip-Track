@@ -1,5 +1,6 @@
 package dev.klarkengkoy.triptrack.data.repository
 
+import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
 import kotlinx.coroutines.flow.Flow
 
@@ -18,4 +19,6 @@ interface TripsRepository {
     suspend fun deleteTrips(tripIds: Set<String>)
 
     suspend fun syncTrips()
+
+    suspend fun addTransaction(transaction: Transaction)
 }

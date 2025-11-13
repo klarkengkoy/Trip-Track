@@ -2,6 +2,7 @@ package dev.klarkengkoy.triptrack.data
 
 import androidx.room.TypeConverter
 import com.google.firebase.Timestamp
+import dev.klarkengkoy.triptrack.model.TransactionType
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -18,6 +19,12 @@ class Converters {
     fun dateToTimestamp(date: LocalDate?): Long? {
         return date?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
     }
+
+    @TypeConverter
+    fun toTransactionType(value: String) = enumValueOf<TransactionType>(value)
+
+    @TypeConverter
+    fun fromTransactionType(value: TransactionType) = value.name
     // endregion
 
 

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
 import kotlinx.coroutines.flow.Flow
 
@@ -24,4 +25,10 @@ interface TripDao {
 
     @Query("SELECT * FROM trips WHERE id = :tripId")
     suspend fun getTripById(tripId: String): Trip?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransaction(transaction: Transaction)
+
+    @Query("SELECT * FROM transactions WHERE tripId = :tripId")
+    fun getTransactions(tripId: String): Flow<List<Transaction>>
 }

@@ -18,7 +18,8 @@ data class FirebaseTrip(
     val dailyBudget: Double? = null,
     val totalBudget: Double? = null,
     val isActive: Boolean = false,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val dateCreated: Timestamp = Timestamp.now()
 ) {
     companion object {
         fun fromTrip(trip: Trip): FirebaseTrip {
@@ -37,7 +38,8 @@ data class FirebaseTrip(
                 dailyBudget = trip.dailyBudget,
                 totalBudget = trip.totalBudget,
                 isActive = trip.isActive,
-                isDeleted = trip.isDeleted
+                isDeleted = trip.isDeleted,
+                dateCreated = converters.toFirebaseTimestamp(trip.dateCreated) ?: Timestamp.now()
             )
         }
     }

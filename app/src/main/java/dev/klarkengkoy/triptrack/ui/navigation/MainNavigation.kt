@@ -31,6 +31,7 @@ import dev.klarkengkoy.triptrack.ui.media.MediaScreen
 import dev.klarkengkoy.triptrack.ui.settings.SettingsScreen
 import dev.klarkengkoy.triptrack.ui.trips.TripsScreen
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
+import dev.klarkengkoy.triptrack.ui.trips.transaction.CategoryScreen
 import dev.klarkengkoy.triptrack.ui.trips.transaction.TransactionScreen
 import dev.klarkengkoy.triptrack.ui.trips.tripdetails.CurrencyListScreen
 import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripBudgetScreen
@@ -42,6 +43,8 @@ import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripSummaryScreen
 
 const val ADD_TRIP_ROUTE = "addTrip"
 const val EDIT_TRIP_ROUTE = "editTrip"
+const val ADD_TRANSACTION_ROUTE = "addTransaction"
+
 private const val ANIMATION_DURATION = 700
 
 private fun slideIn(
@@ -96,17 +99,65 @@ private fun NavGraphBuilder.tripsGraph(
         TripsScreen(
             mainViewModel = mainViewModel,
             onAddTrip = { navController.navigate(ADD_TRIP_ROUTE) },
-            onAddTransaction = { tripId -> navController.navigate("addTransaction/$tripId") },
+            onAddTransaction = { tripId -> navController.navigate("$ADD_TRANSACTION_ROUTE/$tripId") },
             onEditTrip = { tripId -> navController.navigate("$EDIT_TRIP_ROUTE/$tripId") }
         )
     }
 
-    composable("addTransaction/{tripId}") {
-        TransactionScreen()
-    }
-
+    addTransactionGraph(navController, mainViewModel)
     addTripGraph(navController, mainViewModel)
     editTripGraph(navController, mainViewModel)
+}
+
+private fun NavGraphBuilder.addTransactionGraph(
+    navController: NavHostController,
+    mainViewModel: MainViewModel
+) {
+    navigation(startDestination = "addTransactionCategory", route = "$ADD_TRANSACTION_ROUTE/{tripId}") {
+        composable("addTransactionCategory") { 
+
+            LaunchedEffect(Unit) {
+                mainViewModel.setTopAppBarState(
+                    title = { Text("Select a Category") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_navigate_up)
+                            )
+                        }
+                    },
+                    actions = {}
+                )
+            }
+
+            CategoryScreen(onCategorySelected = {
+                navController.navigate("addTransactionDetails/$it")
+            })
+        }
+
+        composable("addTransactionDetails/{category}") { 
+            LaunchedEffect(Unit) {
+                mainViewModel.setTopAppBarState(
+                    title = { Text("Add Transaction") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_navigate_up)
+                            )
+                        }
+                    },
+                    actions = {}
+                )
+            }
+            TransactionScreen(onSave = {
+                navController.navigate("trips") {
+                    popUpTo("$ADD_TRANSACTION_ROUTE/{tripId}") { inclusive = true }
+                }
+            })
+        }
+    }
 }
 
 private fun NavGraphBuilder.addTripGraph(
@@ -487,12 +538,12 @@ private fun NavGraphBuilder.editTripGraph(
             }
 
             TripBudgetScreen(
-                onNavigateNext = { navController.navigate("editTripPhoto") },
+                onNavigateNext = { navController.navigate("addTripPhoto") },
                 viewModel = viewModel
             )
         }
         composable(
-            "editTripPhoto",
+            "addTripPhoto",
             enterTransition = slideInFromLeft,
             exitTransition = slideOutToLeft,
             popEnterTransition = slideInFromRight,
@@ -555,7 +606,7 @@ private fun NavGraphBuilder.editTripGraph(
                 },
                 onDiscard = {
                     viewModel.resetAddTripState()
-                    navController.navigate("trips") {
+                    navController.navigate("tri_ps") {
                         popUpTo("$EDIT_TRIP_ROUTE/{tripId}") { inclusive = true }
                     }
                 },

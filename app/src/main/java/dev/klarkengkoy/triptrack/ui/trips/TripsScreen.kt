@@ -213,7 +213,7 @@ private fun TripsScreenContent(
             ExtendedFloatingActionButton(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(16.dp),
+                    .padding(8.dp),
                 onClick = {
                     if (selectedTrip != null) {
                         onAddTransaction()

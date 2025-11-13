@@ -6,7 +6,9 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
 import dev.klarkengkoy.triptrack.data.local.TripDao
+import dev.klarkengkoy.triptrack.data.remote.FirebaseTransaction
 import dev.klarkengkoy.triptrack.data.remote.FirebaseTrip
+import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,6 +27,10 @@ class TripsRepositoryImpl @Inject constructor(
         get() = auth.currentUser?.uid?.let {
             firestore.collection("users").document(it).collection("trips")
         }
+
+    private fun getTripTransactionsCollection(tripId: String): CollectionReference? {
+        return userTripsCollection?.document(tripId)?.collection("transactions")
+    }
 
     override fun getTrips(): Flow<List<Trip>> {
         return tripDao.getTrips()
@@ -70,6 +76,11 @@ class TripsRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing trips", e)
         }
+    }
+
+    override suspend fun addTransaction(transaction: Transaction) {
+        tripDao.insertTransaction(transaction)
+        getTripTransactionsCollection(transaction.tripId)?.document(transaction.id)?.set(FirebaseTransaction.fromTransaction(transaction))?.await()
     }
 
     private suspend fun syncDeletions(collection: CollectionReference) {

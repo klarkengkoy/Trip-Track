@@ -28,7 +28,8 @@ object AppModule {
             context,
             TripTrackDatabase::class.java,
             "triptrack_database"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
