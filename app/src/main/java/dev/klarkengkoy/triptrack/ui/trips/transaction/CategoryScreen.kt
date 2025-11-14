@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import dev.klarkengkoy.triptrack.model.IncomeCategory
 import dev.klarkengkoy.triptrack.model.TransactionCategory
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
+import dev.klarkengkoy.triptrack.ui.theme.customColors
 
 @Composable
 fun CategoryScreen(
@@ -42,8 +44,25 @@ fun CategoryScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(TransactionCategory.categories) {
-                CategoryCard(title = it.title, icon = it.icon, onClick = { onCategorySelected(it.route) })
+            items(TransactionCategory.categories) { category ->
+                val color = when (category) {
+                    TransactionCategory.Accommodation -> MaterialTheme.customColors.accommodation
+                    TransactionCategory.Activities -> MaterialTheme.customColors.activities
+                    TransactionCategory.Drinks -> MaterialTheme.customColors.drinks
+                    TransactionCategory.Entertainment -> MaterialTheme.customColors.entertainment
+                    TransactionCategory.FeesAndCharges -> MaterialTheme.customColors.feesAndCharges
+                    TransactionCategory.Flights -> MaterialTheme.customColors.flights
+                    TransactionCategory.General -> MaterialTheme.customColors.general
+                    TransactionCategory.GiftsAndSouvenirs -> MaterialTheme.customColors.giftsAndSouvenirs
+                    TransactionCategory.Groceries -> MaterialTheme.customColors.groceries
+                    TransactionCategory.Insurance -> MaterialTheme.customColors.insurance
+                    TransactionCategory.Laundry -> MaterialTheme.customColors.laundry
+                    TransactionCategory.Restaurants -> MaterialTheme.customColors.restaurants
+                    TransactionCategory.Shopping -> MaterialTheme.customColors.shopping
+                    TransactionCategory.ToursAndEntry -> MaterialTheme.customColors.toursAndEntry
+                    TransactionCategory.Transportation -> MaterialTheme.customColors.transportation
+                }
+                CategoryCard(title = category.title, icon = category.icon, color = color, onClick = { onCategorySelected(category.route) })
             }
         }
 
@@ -58,8 +77,13 @@ fun CategoryScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(IncomeCategory.categories) {
-                CategoryCard(title = it.title, icon = it.icon, onClick = { onCategorySelected(it.route) })
+            items(IncomeCategory.categories) { category ->
+                val color = when (category) {
+                    IncomeCategory.Gifts -> MaterialTheme.customColors.gift
+                    IncomeCategory.OtherIncome -> MaterialTheme.customColors.other
+                    IncomeCategory.Salary -> MaterialTheme.customColors.salary
+                }
+                CategoryCard(title = category.title, icon = category.icon, color = color, onClick = { onCategorySelected(category.route) })
             }
         }
     }
@@ -69,6 +93,7 @@ fun CategoryScreen(
 fun CategoryCard(
     title: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
     onClick: () -> Unit
 ) {
     Card(
@@ -82,7 +107,11 @@ fun CategoryCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(imageVector = icon, contentDescription = title)
+            Icon(
+                imageVector = icon, 
+                contentDescription = title,
+                tint = color
+            )
             Text(
                 text = title,
                 textAlign = TextAlign.Center,
