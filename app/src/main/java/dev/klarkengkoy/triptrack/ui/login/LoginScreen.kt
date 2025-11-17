@@ -107,6 +107,7 @@ fun SignInButton(
     contentColor: Color = Color.White,
     icon: @Composable () -> Unit
 ) {
+    // TODO(klarkengkoy): We will also implement other Login Buttons that is currently there but not working for now.
     ElevatedButton(
         onClick = onClick,
         modifier = modifier,

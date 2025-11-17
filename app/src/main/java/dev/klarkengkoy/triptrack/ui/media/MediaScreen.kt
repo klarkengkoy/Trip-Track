@@ -14,6 +14,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun MediaScreen(
     notificationsViewModel: MediaViewModel = hiltViewModel()
 ) {
+    // TODO(klarkengkoy): Media Bottom Navigation will have a Gallery of Saved Photos/Images.
     val text by notificationsViewModel.text.observeAsState("")
     Box(
         modifier = Modifier.fillMaxSize(),

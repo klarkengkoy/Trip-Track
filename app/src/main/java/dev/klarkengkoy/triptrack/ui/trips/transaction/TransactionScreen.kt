@@ -184,6 +184,7 @@ fun TransactionScreen(
         onLocationChange = viewModel::onLocationChange,
         onAddPhotoClick = { imagePickerLauncher.launch("image/*") },
         onSave = {
+            // TODO(klarkengkoy): Complete Save Transaction feature
             viewModel.saveTransaction()
             onSave()
         }
@@ -364,6 +365,7 @@ fun TransactionContent(
 
                 HorizontalDivider()
 
+                // TODO(klarkengkoy): Implement Google Maps to pin point Location in Transaction Screen.
                 TransactionInputItem(
                     value = uiState.location,
                     onValueChange = onLocationChange,

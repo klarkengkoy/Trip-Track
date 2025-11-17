@@ -14,6 +14,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun DashboardScreen(
     dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
+    // TODO(klarkengkoy): Dashboard to contain different metrics.
     val text by dashboardViewModel.text.observeAsState("")
     Box(
         modifier = Modifier.fillMaxSize(),

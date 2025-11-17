@@ -131,6 +131,7 @@ private fun TripCurrencyContent(
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 val customCurrency = if (tripUiState.isCurrencyCustom) tripUiState.currency else ""
+                // TODO(klarkengkoy): Inside ui>tripdetails>tripcurrencyscreen, we will also put some validations like what we did here in Transaction amount.
                 BasicTextField(
                     value = customCurrency,
                     onValueChange = onCustomCurrencyChanged,

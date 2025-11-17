@@ -12,6 +12,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun MapsScreen(
     mapsViewModel: MapsViewModel = hiltViewModel()
 ) {
+    // TODO(klarkengkoy): We will also have a Maps Bottom Navigation would show Map with markers on where we have transactions.
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
