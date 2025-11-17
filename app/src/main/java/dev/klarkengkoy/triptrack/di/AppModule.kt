@@ -2,6 +2,8 @@ package dev.klarkengkoy.triptrack.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -21,6 +23,12 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    private val MIGRATION_1_2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE transactions ADD COLUMN imageUri TEXT DEFAULT NULL")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideTripTrackDatabase(@ApplicationContext context: Context): TripTrackDatabase {
@@ -28,7 +36,7 @@ object AppModule {
             context,
             TripTrackDatabase::class.java,
             "triptrack_database"
-        ).fallbackToDestructiveMigration()
+        ).addMigrations(MIGRATION_1_2)
             .build()
     }
 

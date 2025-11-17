@@ -1,5 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.trips.transaction
 
+import android.net.Uri
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -23,7 +24,7 @@ import javax.inject.Inject
 
 data class TransactionUiState(
     val tripId: String = "",
-    val amount: String = "",
+    val amount: String = "0",
     val description: String = "",
     val categoryTitle: String = "",
     val categoryIcon: ImageVector? = null,
@@ -31,8 +32,10 @@ data class TransactionUiState(
     val currencySymbol: String = "",
     val paymentMethod: PaymentMethod? = null,
     val location: String = "",
+    val imageUri: Uri? = null,
     val availablePaymentMethods: List<PaymentMethod> = emptyList(),
-    val isDatePickerVisible: Boolean = false
+    val isDatePickerVisible: Boolean = false,
+    val isPaymentMethodMenuExpanded: Boolean = false
 )
 
 @HiltViewModel
@@ -88,8 +91,20 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    fun onAmountChange(amount: String) {
-        _uiState.update { it.copy(amount = amount) }
+    fun onAmountChange(newAmount: String) {
+        val currentAmount = _uiState.value.amount
+
+        val updatedAmount = when {
+            // If the user clears the input, reset to "0"
+            newAmount.isEmpty() -> "0"
+            // If current amount is "0" and user types a non-zero digit, replace "0"
+            currentAmount == "0" && newAmount != "0." && newAmount.length > 1 && !newAmount.startsWith("0.") -> newAmount.substring(1)
+            // If user types a decimal after "0", allow it
+            currentAmount == "0" && newAmount == "0." -> "0."
+            else -> newAmount
+        }
+
+        _uiState.update { it.copy(amount = updatedAmount) }
     }
 
     fun onDescriptionChange(description: String) {
@@ -103,11 +118,19 @@ class TransactionViewModel @Inject constructor(
     }
 
     fun onPaymentMethodChange(paymentMethod: PaymentMethod) {
-        _uiState.update { it.copy(paymentMethod = paymentMethod) }
+        _uiState.update { it.copy(paymentMethod = paymentMethod, isPaymentMethodMenuExpanded = false) }
+    }
+
+    fun onPaymentMethodMenuToggled(isExpanded: Boolean) {
+        _uiState.update { it.copy(isPaymentMethodMenuExpanded = isExpanded) }
     }
 
     fun onLocationChange(location: String) {
         _uiState.update { it.copy(location = location) }
+    }
+
+    fun onImageChange(uri: Uri?) {
+        _uiState.update { it.copy(imageUri = uri) }
     }
 
     fun showDatePicker(show: Boolean) {
@@ -126,6 +149,7 @@ class TransactionViewModel @Inject constructor(
                 date = uiState.date,
                 category = Category(uiState.categoryTitle, 0), // Use placeholder 0 for iconRes
                 paymentMethod = uiState.paymentMethod,
+                imageUri = uiState.imageUri?.toString(),
                 type = if (TransactionCategory.fromRoute(savedStateHandle.get<String>("category")) != null) TransactionType.EXPENSE else TransactionType.INCOME
             )
             tripsRepository.addTransaction(transaction)

@@ -114,7 +114,8 @@ private fun NavGraphBuilder.addTransactionGraph(
     mainViewModel: MainViewModel
 ) {
     navigation(startDestination = "addTransactionCategory", route = "$ADD_TRANSACTION_ROUTE/{tripId}") {
-        composable("addTransactionCategory") { 
+        composable("addTransactionCategory") { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
 
             LaunchedEffect(Unit) {
                 mainViewModel.setTopAppBarState(
@@ -131,12 +132,12 @@ private fun NavGraphBuilder.addTransactionGraph(
                 )
             }
 
-            CategoryScreen(onCategorySelected = {
-                navController.navigate("addTransactionDetails/$it")
+            CategoryScreen(onCategorySelected = { category ->
+                navController.navigate("addTransactionDetails/$tripId/$category")
             })
         }
 
-        composable("addTransactionDetails/{category}") { 
+        composable("addTransactionDetails/{tripId}/{category}") { 
             LaunchedEffect(Unit) {
                 mainViewModel.setTopAppBarState(
                     title = { Text("Add Transaction") },

@@ -17,6 +17,7 @@ data class FirebaseTransaction(
     val category: Category = Category("", 0),
     val paymentMethod: PaymentMethod = PaymentMethod("", 0),
     val location: Coordinates? = null,
+    val imageUri: String? = null,
     val excludeFromBudget: Boolean = false,
     val type: String = TransactionType.EXPENSE.name,
     val isDeleted: Boolean = false
@@ -33,6 +34,7 @@ data class FirebaseTransaction(
                 category = transaction.category,
                 paymentMethod = transaction.paymentMethod,
                 location = transaction.location,
+                imageUri = transaction.imageUri,
                 excludeFromBudget = transaction.excludeFromBudget,
                 type = transaction.type.name
             )

@@ -34,4 +34,13 @@
     <string name="add_trip_summary_title">Review your trip</string>
     <string name="cd_navigate_up">Navigate up</string>
     <string name="cd_save_trip">Save trip</string>
+
+    <!-- Transaction Screen -->
+    <string name="transaction_ok">OK</string>
+    <string name="transaction_cancel">Cancel</string>
+    <string name="transaction_notes_placeholder">Notes</string>
+    <string name="transaction_date">Date</string>
+    <string name="transaction_payment_method">Payment Method</string>
+    <string name="transaction_location_placeholder">Location</string>
+    <string name="transaction_save">Save Transaction</string>
 </resources>

@@ -44,6 +44,7 @@ data class Transaction(
     val paymentMethod: PaymentMethod,
     @Embedded(prefix = "location_")
     val location: Coordinates? = null,
+    val imageUri: String? = null,
     val excludeFromBudget: Boolean = false,
     val type: TransactionType
 )
