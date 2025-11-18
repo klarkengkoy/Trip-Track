@@ -22,9 +22,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import dev.klarkengkoy.triptrack.R
-import dev.klarkengkoy.triptrack.ui.MainViewModel
+import dev.klarkengkoy.triptrack.ui.TopAppBarState
 import dev.klarkengkoy.triptrack.ui.dashboard.DashboardScreen
 import dev.klarkengkoy.triptrack.ui.maps.MapsScreen
 import dev.klarkengkoy.triptrack.ui.media.MediaScreen
@@ -80,45 +81,48 @@ private val fadeOutAnim: AnimatedContentTransitionScope<NavBackStackEntry>.() ->
 fun MainNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
     NavHost(navController, startDestination = "trips", modifier = modifier) {
-        tripsGraph(navController, mainViewModel)
+        tripsGraph(navController, setTopAppBar)
         dashboardGraph()
         mediaGraph()
         mapsGraph()
-        settingsGraph(mainViewModel)
+        settingsGraph(setTopAppBar)
     }
 }
 
 private fun NavGraphBuilder.tripsGraph(
     navController: NavHostController,
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
-    composable("trips") {
+    composable(
+        route = "trips?tripId={tripId}",
+        arguments = listOf(navArgument("tripId") { nullable = true })
+    ) {
         TripsScreen(
-            mainViewModel = mainViewModel,
+            setTopAppBar = setTopAppBar,
             onAddTrip = { navController.navigate(ADD_TRIP_ROUTE) },
             onAddTransaction = { tripId -> navController.navigate("$ADD_TRANSACTION_ROUTE/$tripId") },
             onEditTrip = { tripId -> navController.navigate("$EDIT_TRIP_ROUTE/$tripId") }
         )
     }
 
-    addTransactionGraph(navController, mainViewModel)
-    addTripGraph(navController, mainViewModel)
-    editTripGraph(navController, mainViewModel)
+    addTransactionGraph(navController, setTopAppBar)
+    addTripGraph(navController, setTopAppBar)
+    editTripGraph(navController, setTopAppBar)
 }
 
 private fun NavGraphBuilder.addTransactionGraph(
     navController: NavHostController,
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
     navigation(startDestination = "addTransactionCategory", route = "$ADD_TRANSACTION_ROUTE/{tripId}") {
         composable("addTransactionCategory") { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Select a Category") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -127,9 +131,8 @@ private fun NavGraphBuilder.addTransactionGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             CategoryScreen(onCategorySelected = { category ->
@@ -139,7 +142,7 @@ private fun NavGraphBuilder.addTransactionGraph(
 
         composable("addTransactionDetails/{tripId}/{category}") { 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Transaction") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -148,9 +151,8 @@ private fun NavGraphBuilder.addTransactionGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
             TransactionScreen(onSave = {
                 navController.navigate("trips") {
@@ -163,7 +165,7 @@ private fun NavGraphBuilder.addTransactionGraph(
 
 private fun NavGraphBuilder.addTripGraph(
     navController: NavHostController,
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
     navigation(startDestination = "addTripName", route = ADD_TRIP_ROUTE) {
         composable(
@@ -177,7 +179,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -186,9 +188,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripNameScreen(
@@ -217,7 +218,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -226,9 +227,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripCurrencyScreen(
@@ -248,8 +248,8 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
-                    title = { Text("Add Trip") },
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
@@ -257,9 +257,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripDatesScreen(
@@ -278,7 +277,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -287,9 +286,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripBudgetScreen(
@@ -308,7 +306,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -317,9 +315,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripPhotoScreen(
@@ -338,7 +335,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -347,9 +344,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripSummaryScreen(
@@ -378,7 +374,7 @@ private fun NavGraphBuilder.addTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Select Currency") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -387,9 +383,8 @@ private fun NavGraphBuilder.addTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             CurrencyListScreen(
@@ -404,7 +399,7 @@ private fun NavGraphBuilder.addTripGraph(
 
 private fun NavGraphBuilder.editTripGraph(
     navController: NavHostController,
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
     navigation(startDestination = "editTripName", route = "$EDIT_TRIP_ROUTE/{tripId}") {
         composable(
@@ -419,7 +414,7 @@ private fun NavGraphBuilder.editTripGraph(
             val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
 
             LaunchedEffect(tripId) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -428,9 +423,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
 
                 if (tripId.isNotEmpty()) {
                     viewModel.populateTripDetails(tripId)
@@ -463,7 +457,7 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -472,9 +466,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripCurrencyScreen(
@@ -494,7 +487,7 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -503,9 +496,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripDatesScreen(
@@ -524,8 +516,8 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
-                    title = { Text("Edit Trip") },
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Add Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
@@ -533,9 +525,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripBudgetScreen(
@@ -554,7 +545,7 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -563,9 +554,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripPhotoScreen(
@@ -584,7 +574,7 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -593,9 +583,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             TripSummaryScreen(
@@ -624,7 +613,7 @@ private fun NavGraphBuilder.editTripGraph(
             val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
             LaunchedEffect(Unit) {
-                mainViewModel.setTopAppBarState(
+                setTopAppBar(TopAppBarState(
                     title = { Text("Select Currency") },
                     navigationIcon = {
                         IconButton(onClick = { navController.navigateUp() }) {
@@ -633,9 +622,8 @@ private fun NavGraphBuilder.editTripGraph(
                                 contentDescription = stringResource(R.string.cd_navigate_up)
                             )
                         }
-                    },
-                    actions = {}
-                )
+                    }
+                ))
             }
 
             CurrencyListScreen(
@@ -666,8 +654,8 @@ private fun NavGraphBuilder.mapsGraph() {
     }
 }
 
-private fun NavGraphBuilder.settingsGraph(mainViewModel: MainViewModel) {
+private fun NavGraphBuilder.settingsGraph(setTopAppBar: (TopAppBarState) -> Unit) {
     composable("settings") {
-        SettingsScreen(mainViewModel = mainViewModel)
+        SettingsScreen(setTopAppBar = setTopAppBar)
     }
 }

@@ -17,7 +17,6 @@ data class FirebaseTrip(
     val endDate: Timestamp? = null,
     val dailyBudget: Double? = null,
     val totalBudget: Double? = null,
-    val isActive: Boolean = false,
     val isDeleted: Boolean = false,
     val dateCreated: Timestamp = Timestamp.now()
 ) {
@@ -37,7 +36,6 @@ data class FirebaseTrip(
                 endDate = converters.toFirebaseTimestamp(trip.endDate),
                 dailyBudget = trip.dailyBudget,
                 totalBudget = trip.totalBudget,
-                isActive = trip.isActive,
                 isDeleted = trip.isDeleted,
                 dateCreated = converters.toFirebaseTimestamp(trip.dateCreated) ?: Timestamp.now()
             )

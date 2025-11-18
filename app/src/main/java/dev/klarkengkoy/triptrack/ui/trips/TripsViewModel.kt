@@ -1,6 +1,7 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +11,7 @@ import dev.klarkengkoy.triptrack.model.Trip
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -49,7 +51,8 @@ data class TripUiState(
 
 @HiltViewModel
 class TripsViewModel @Inject constructor(
-    private val tripsRepository: TripsRepository
+    private val tripsRepository: TripsRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TripsUiState())
@@ -59,8 +62,32 @@ class TripsViewModel @Inject constructor(
         tripsRepository.getTrips()
             .onEach { trips ->
                 _uiState.update { it.copy(trips = trips) }
+
+                // Check for a tripId from navigation
+                val tripId = savedStateHandle.get<String>("tripId")
+                if (tripId != null) {
+                    val trip = trips.find { it.id == tripId }
+                    if (trip != null) {
+                        selectTrip(trip)
+                    }
+                }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun onTripClicked(tripId: String) {
+        viewModelScope.launch {
+            tripsRepository.setActiveTrip(tripId, true)
+        }
+    }
+
+    fun onTripDeactivated() {
+        viewModelScope.launch {
+            val activeTrip = tripsRepository.getActiveTrip().first()
+            if (activeTrip != null) {
+                tripsRepository.setActiveTrip(activeTrip.id, false)
+            }
+        }
     }
 
     fun populateTripDetails(tripId: String) {

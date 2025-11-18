@@ -63,7 +63,7 @@ import dev.klarkengkoy.triptrack.model.PaymentMethod
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.TransactionType
 import dev.klarkengkoy.triptrack.model.Trip
-import dev.klarkengkoy.triptrack.ui.MainViewModel
+import dev.klarkengkoy.triptrack.ui.TopAppBarState
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -80,7 +80,7 @@ import java.util.Locale
 fun TripsScreen(
     modifier: Modifier = Modifier,
     viewModel: TripsViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel,
+    setTopAppBar: (TopAppBarState) -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: (String) -> Unit,
     onEditTrip: (String) -> Unit
@@ -90,9 +90,13 @@ fun TripsScreen(
     TripsScreenContent(
         modifier = modifier,
         uiState = uiState,
-        mainViewModel = mainViewModel,
-        onSelectTrip = { trip -> viewModel.selectTrip(trip) },
+        setTopAppBar = setTopAppBar,
+        onActivateAndSelectTrip = { trip ->
+            viewModel.onTripClicked(trip.id)
+            viewModel.selectTrip(trip)
+        },
         onUnselectTrip = { viewModel.unselectTrip() },
+        onDeactivateTrip = { viewModel.onTripDeactivated() },
         onAddTrip = onAddTrip,
         onAddTransaction = {
             uiState.selectedTrip?.let { onAddTransaction(it.id) }
@@ -116,9 +120,10 @@ fun TripsScreen(
 private fun TripsScreenContent(
     modifier: Modifier = Modifier,
     uiState: TripsUiState,
-    mainViewModel: MainViewModel,
-    onSelectTrip: (Trip) -> Unit,
+    setTopAppBar: (TopAppBarState) -> Unit,
+    onActivateAndSelectTrip: (Trip) -> Unit,
     onUnselectTrip: () -> Unit,
+    onDeactivateTrip: () -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: () -> Unit,
     onEditTrip: () -> Unit,
@@ -137,12 +142,13 @@ private fun TripsScreenContent(
             onExitSelectionMode()
         } else {
             onUnselectTrip()
+            onDeactivateTrip()
         }
     }
 
     // Configure the TopAppBar based on the current screen state
     LaunchedEffect(selectedTrip, selectionMode, uiState.selectedTrips) {
-        mainViewModel.setTopAppBarState(
+        val topAppBarState = TopAppBarState(
             title = {
                 Text(
                     text = when {
@@ -180,19 +186,20 @@ private fun TripsScreenContent(
                 }
             }
         )
+        setTopAppBar(topAppBarState)
     }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (selectedTrip != null) {
-                TripDetailsContent(
+                TripTransactionsContent(
                     trip = selectedTrip,
                     transactions = uiState.selectedTripTransactions,
                 )
             } else {
-                TripsListContent(
+                TripListContent(
                     trips = uiState.trips,
-                    onTripSelected = onSelectTrip,
+                    onActivateAndSelectTrip = onActivateAndSelectTrip,
                     selectionMode = selectionMode,
                     selectedTrips = uiState.selectedTrips,
                     onEnterSelectionMode = onEnterSelectionMode,
@@ -258,7 +265,7 @@ private fun TripsBottomBar(
 
 
 @Composable
-private fun TripDetailsContent(
+private fun TripTransactionsContent(
     trip: Trip,
     transactions: List<Transaction>,
     modifier: Modifier = Modifier
@@ -404,9 +411,9 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TripsListContent(
+private fun TripListContent(
     trips: List<Trip>,
-    onTripSelected: (Trip) -> Unit,
+    onActivateAndSelectTrip: (Trip) -> Unit,
     selectionMode: Boolean,
     selectedTrips: Set<String>,
     onEnterSelectionMode: (String) -> Unit,
@@ -429,7 +436,7 @@ private fun TripsListContent(
                     if (selectionMode) {
                         onToggleTripSelection(trip.id)
                     } else {
-                        onTripSelected(trip)
+                        onActivateAndSelectTrip(trip)
                     }
                 },
                 onLongClick = { onEnterSelectionMode(trip.id) }
@@ -618,9 +625,10 @@ private fun TripsScreenPreview_TripSelected() {
         )
         TripsScreenContent(
             uiState = uiState,
-            mainViewModel = hiltViewModel(),
-            onSelectTrip = { },
+            setTopAppBar = {},
+            onActivateAndSelectTrip = {},
             onUnselectTrip = { },
+            onDeactivateTrip = {},
             onAddTrip = { },
             onAddTransaction = { },
             onEditTrip = {},
@@ -662,9 +670,10 @@ private fun TripsScreenPreview_NoTripSelected() {
                 trips = sampleTrips,
                 transactionsByTrip = emptyMap()
             ),
-            mainViewModel = hiltViewModel(),
-            onSelectTrip = { },
+            setTopAppBar = {},
+            onActivateAndSelectTrip = {},
             onUnselectTrip = { },
+            onDeactivateTrip = {},
             onAddTrip = { },
             onAddTransaction = { },
             onEditTrip = {},
@@ -708,9 +717,10 @@ private fun TripsScreenPreview_SelectionMode() {
                 selectedTrips = setOf("1"),
                 trips = sampleTrips
             ),
-            mainViewModel = hiltViewModel(),
-            onSelectTrip = { },
+            setTopAppBar = {},
+            onActivateAndSelectTrip = {},
             onUnselectTrip = { },
+            onDeactivateTrip = {},
             onAddTrip = { },
             onAddTransaction = { },
             onEditTrip = {},

@@ -13,7 +13,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-data class BottomNavItem(val route: String, val icon: Int, val label: String)
+data class BottomNavItem(val route: String, val icon: Int, val label: String, val isEnabled: Boolean = true)
 
 @Composable
 fun BottomNavigationBar(
@@ -29,6 +29,7 @@ fun BottomNavigationBar(
                 icon = { Icon(painterResource(id = item.icon), contentDescription = item.label) },
                 label = { Text(item.label) },
                 selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                enabled = item.isEnabled,
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo(navController.graph.findStartDestination().id) {

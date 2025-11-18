@@ -46,7 +46,6 @@ data class Trip(
                 endDate = converters.fromFirebaseTimestamp(firebaseTrip.endDate),
                 dailyBudget = firebaseTrip.dailyBudget,
                 totalBudget = firebaseTrip.totalBudget,
-                isActive = firebaseTrip.isActive,
                 isDeleted = firebaseTrip.isDeleted,
                 dateCreated = converters.fromFirebaseTimestamp(firebaseTrip.dateCreated) ?: LocalDate.now()
             )

@@ -83,6 +83,17 @@ class TripsRepositoryImpl @Inject constructor(
         getTripTransactionsCollection(transaction.tripId)?.document(transaction.id)?.set(FirebaseTransaction.fromTransaction(transaction))?.await()
     }
 
+    override suspend fun setActiveTrip(tripId: String, isActive: Boolean) {
+        val trip = tripDao.getTripById(tripId)
+        if (trip != null) {
+            tripDao.insertTrip(trip.copy(isActive = isActive))
+        }
+    }
+
+    override fun getActiveTrip(): Flow<Trip?> {
+        return tripDao.getActiveTrip()
+    }
+
     private suspend fun syncDeletions(collection: CollectionReference) {
         val deletedTrips = tripDao.getDeletedTrips()
         if (deletedTrips.isNotEmpty()) {

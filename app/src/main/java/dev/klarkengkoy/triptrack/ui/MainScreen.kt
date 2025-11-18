@@ -17,7 +17,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -25,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.klarkengkoy.triptrack.R
@@ -43,12 +44,22 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 @Composable
 fun TripTrackScreen(
     loginViewModel: LoginViewModel,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
+    navController: NavHostController,
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
-    val isSignedIn by loginViewModel.isUserSignedIn.collectAsState()
+    val isSignedIn by loginViewModel.isUserSignedIn.collectAsStateWithLifecycle()
+    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val activeTripUiState by mainViewModel.activeTripUiState.collectAsStateWithLifecycle()
 
     if (isSignedIn) {
-        MainScreen(snackbarHostState = snackbarHostState)
+        MainScreen(
+            snackbarHostState = snackbarHostState,
+            navController = navController,
+            mainUiState = mainUiState,
+            activeTripUiState = activeTripUiState,
+            setTopAppBar = { mainViewModel.setTopAppBarState(it.title, it.navigationIcon, it.actions, it.isCenterAligned) }
+        )
     } else {
         LoginNavigation(viewModel = loginViewModel)
     }
@@ -63,17 +74,18 @@ fun TripTrackScreen(
 private fun MainScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    mainViewModel: MainViewModel = hiltViewModel()
+    navController: NavHostController,
+    mainUiState: MainUiState,
+    activeTripUiState: ActiveTripUiState,
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
-    val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val mainUiState by mainViewModel.uiState.collectAsState()
 
     val bottomNavItems = listOf(
         BottomNavItem("trips", R.drawable.travel_luggage_and_bags_24px, "Trips"),
-        BottomNavItem("dashboard", R.drawable.dashboard_24px, "Dashboard"),
-        BottomNavItem("media", R.drawable.photo_album_24px, "Media"),
-        BottomNavItem("maps", R.drawable.map_24px, "Maps"),
+        BottomNavItem("dashboard", R.drawable.dashboard_24px, "Dashboard", isEnabled = activeTripUiState.hasActiveTrip),
+        BottomNavItem("media", R.drawable.photo_album_24px, "Media", isEnabled = activeTripUiState.hasActiveTrip),
+        BottomNavItem("maps", R.drawable.map_24px, "Maps", isEnabled = activeTripUiState.hasActiveTrip),
         BottomNavItem("settings", R.drawable.settings_24px, "Settings")
     )
 
@@ -81,7 +93,7 @@ private fun MainScreen(
     val shouldShowBottomNav = if (isPreview) {
         true
     } else {
-        bottomNavItems.any { it.route == navBackStackEntry?.destination?.route }
+        bottomNavItems.any { navBackStackEntry?.destination?.route?.startsWith(it.route) == true }
     }
 
     Scaffold(
@@ -110,7 +122,7 @@ private fun MainScreen(
                 ) {
                     BottomNavigationBar(
                         navController = navController,
-                        items = bottomNavItems,
+                        items = bottomNavItems
                     )
                 }
             }
@@ -132,7 +144,7 @@ private fun MainScreen(
             MainNavigation(
                 navController = navController,
                 modifier = Modifier.padding(innerPadding),
-                mainViewModel = mainViewModel
+                setTopAppBar = setTopAppBar
             )
         }
     }
@@ -143,6 +155,12 @@ private fun MainScreen(
 @Composable
 private fun MainScreenPreview() {
     TripTrackTheme {
-        MainScreen(snackbarHostState = remember { SnackbarHostState() })
+        MainScreen(
+            snackbarHostState = remember { SnackbarHostState() },
+            navController = rememberNavController(),
+            mainUiState = MainUiState(),
+            activeTripUiState = ActiveTripUiState(),
+            setTopAppBar = {}
+        )
     }
 }

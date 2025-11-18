@@ -21,4 +21,8 @@ interface TripsRepository {
     suspend fun syncTrips()
 
     suspend fun addTransaction(transaction: Transaction)
+
+    suspend fun setActiveTrip(tripId: String, isActive: Boolean)
+
+    fun getActiveTrip(): Flow<Trip?>
 }

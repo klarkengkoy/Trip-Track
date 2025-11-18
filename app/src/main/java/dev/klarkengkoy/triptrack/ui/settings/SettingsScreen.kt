@@ -24,13 +24,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.klarkengkoy.triptrack.ui.MainViewModel
+import dev.klarkengkoy.triptrack.ui.TopAppBarState
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel
+    setTopAppBar: (TopAppBarState) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -38,11 +38,11 @@ fun SettingsScreen(
     val userEmail by viewModel.userEmailFlow.collectAsStateWithLifecycle(initialValue = "")
 
     LaunchedEffect(Unit) {
-        mainViewModel.setTopAppBarState(
+        setTopAppBar(TopAppBarState(
             title = { Text("Settings") },
             navigationIcon = {},
             actions = {}
-        )
+        ))
     }
 
     SettingsScreenContent(
