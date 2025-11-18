@@ -104,8 +104,8 @@ class TripsViewModel @Inject constructor(
                             imageOffsetX = trip.imageOffsetX,
                             imageOffsetY = trip.imageOffsetY,
                             imageScale = trip.imageScale,
-                            startDate = trip.startDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
-                            endDate = trip.endDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
+                            startDate = trip.startDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
+                            endDate = trip.endDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
                             currency = trip.currency,
                             isCurrencyCustom = trip.isCurrencyCustom,
                             totalBudget = trip.totalBudget,
@@ -153,8 +153,8 @@ class TripsViewModel @Inject constructor(
 
             // After updating dates, try to recalculate budget
             if (startDate != null && endDate != null) {
-                val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-                val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+                val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+                val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.of("UTC")).toLocalDate()
                 val days = ChronoUnit.DAYS.between(start, end) + 1
 
                 if (days > 0) {
@@ -207,8 +207,8 @@ class TripsViewModel @Inject constructor(
         val addTripUiState = _uiState.value.tripUiState
 
         val dailyBudget = if (totalBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
-            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
             if (days > 0) totalBudget / days else null
         } else {
@@ -230,8 +230,8 @@ class TripsViewModel @Inject constructor(
         val addTripUiState = _uiState.value.tripUiState
 
         val totalBudget = if (dailyBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
-            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.systemDefault()).toLocalDate()
-            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.systemDefault()).toLocalDate()
+            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
             if (days > 0) dailyBudget * days else null
         } else {
@@ -263,8 +263,8 @@ class TripsViewModel @Inject constructor(
                 imageOffsetX = addTripState.imageOffsetX,
                 imageOffsetY = addTripState.imageOffsetY,
                 imageScale = addTripState.imageScale,
-                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
-                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
                 totalBudget = addTripState.totalBudget,
                 dailyBudget = addTripState.dailyBudget
             )
@@ -284,8 +284,8 @@ class TripsViewModel @Inject constructor(
                 imageOffsetX = addTripState.imageOffsetX,
                 imageOffsetY = addTripState.imageOffsetY,
                 imageScale = addTripState.imageScale,
-                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
-                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate() },
+                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
                 totalBudget = addTripState.totalBudget,
                 dailyBudget = addTripState.dailyBudget
             )

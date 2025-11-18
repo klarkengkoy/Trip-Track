@@ -1,6 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,8 +36,6 @@ import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-private const val TAG = "AddTripDates"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,10 +80,6 @@ fun TripDatesScreen(
                 TextButton(
                     onClick = {
                         dateRangePickerState.selectedEndDateMillis?.let {
-                            Log.d(
-                                TAG,
-                                "Picker selection changed: startDate=${dateRangePickerState.selectedStartDateMillis}, endDate=${it}"
-                            )
                             viewModel.onDatesChanged(
                                 dateRangePickerState.selectedStartDateMillis,
                                 it
@@ -231,7 +224,7 @@ private fun AddTripDatesContent(
 
 private fun formatDate(millis: Long): String {
     val instant = Instant.ofEpochMilli(millis)
-    val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.systemDefault())
+    val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy").withZone(ZoneId.of("UTC"))
     return formatter.format(instant)
 }
 
