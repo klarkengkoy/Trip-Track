@@ -45,8 +45,8 @@ data class TripUiState(
     val endDate: Long? = null,
     val currency: String = "",
     val isCurrencyCustom: Boolean = false,
-    val totalBudget: Double? = null,
-    val dailyBudget: Double? = null
+    val totalBudget: String = "",
+    val dailyBudget: String = ""
 )
 
 @HiltViewModel
@@ -108,8 +108,8 @@ class TripsViewModel @Inject constructor(
                             endDate = trip.endDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
                             currency = trip.currency,
                             isCurrencyCustom = trip.isCurrencyCustom,
-                            totalBudget = trip.totalBudget,
-                            dailyBudget = trip.dailyBudget
+                            totalBudget = trip.totalBudget?.toBigDecimal()?.toPlainString() ?: "",
+                            dailyBudget = trip.dailyBudget?.toBigDecimal()?.toPlainString() ?: ""
                         )
                     )
                 }
@@ -158,15 +158,15 @@ class TripsViewModel @Inject constructor(
                 val days = ChronoUnit.DAYS.between(start, end) + 1
 
                 if (days > 0) {
-                    if (updatedAddTripState.totalBudget != null) {
+                    if (updatedAddTripState.totalBudget.isNotEmpty()) {
                         // Recalculate daily budget from total budget
                         updatedAddTripState = updatedAddTripState.copy(
-                            dailyBudget = updatedAddTripState.totalBudget / days
+                            dailyBudget = String.format("%.2f", updatedAddTripState.totalBudget.toDouble() / days)
                         )
-                    } else if (updatedAddTripState.dailyBudget != null) {
+                    } else if (updatedAddTripState.dailyBudget.isNotEmpty()) {
                         // Recalculate total budget from daily budget
                         updatedAddTripState = updatedAddTripState.copy(
-                            totalBudget = updatedAddTripState.dailyBudget * days
+                            totalBudget = String.format("%.2f", updatedAddTripState.dailyBudget.toDouble() * days)
                         )
                     }
                 }
@@ -203,14 +203,13 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onTotalBudgetChanged(newBudget: String) {
-        val totalBudget = newBudget.toDoubleOrNull()
         val addTripUiState = _uiState.value.tripUiState
 
-        val dailyBudget = if (totalBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
+        val dailyBudget = if (newBudget.isNotEmpty() && addTripUiState.startDate != null && addTripUiState.endDate != null) {
             val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) totalBudget / days else null
+            if (days > 0) String.format("%.2f", newBudget.toDouble() / days) else ""
         } else {
             addTripUiState.dailyBudget // Keep existing daily budget if no dates
         }
@@ -218,7 +217,7 @@ class TripsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 tripUiState = it.tripUiState.copy(
-                    totalBudget = totalBudget,
+                    totalBudget = newBudget,
                     dailyBudget = dailyBudget
                 )
             )
@@ -226,14 +225,13 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onDailyBudgetChanged(newBudget: String) {
-        val dailyBudget = newBudget.toDoubleOrNull()
         val addTripUiState = _uiState.value.tripUiState
 
-        val totalBudget = if (dailyBudget != null && addTripUiState.startDate != null && addTripUiState.endDate != null) {
+        val totalBudget = if (newBudget.isNotEmpty() && addTripUiState.startDate != null && addTripUiState.endDate != null) {
             val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) dailyBudget * days else null
+            if (days > 0) String.format("%.2f", newBudget.toDouble() * days) else ""
         } else {
             addTripUiState.totalBudget // Keep existing total budget if no dates
         }
@@ -242,7 +240,7 @@ class TripsViewModel @Inject constructor(
             it.copy(
                 tripUiState = it.tripUiState.copy(
                     totalBudget = totalBudget,
-                    dailyBudget = dailyBudget
+                    dailyBudget = newBudget
                 )
             )
         }
@@ -265,8 +263,8 @@ class TripsViewModel @Inject constructor(
                 imageScale = addTripState.imageScale,
                 startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
                 endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                totalBudget = addTripState.totalBudget,
-                dailyBudget = addTripState.dailyBudget
+                totalBudget = addTripState.totalBudget.toDoubleOrNull(),
+                dailyBudget = addTripState.dailyBudget.toDoubleOrNull()
             )
             tripsRepository.addTrip(newTrip)
             resetAddTripState()
@@ -286,8 +284,8 @@ class TripsViewModel @Inject constructor(
                 imageScale = addTripState.imageScale,
                 startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
                 endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                totalBudget = addTripState.totalBudget,
-                dailyBudget = addTripState.dailyBudget
+                totalBudget = addTripState.totalBudget.toDoubleOrNull(),
+                dailyBudget = addTripState.dailyBudget.toDoubleOrNull()
             )
             tripsRepository.updateTrip(updatedTrip)
             resetAddTripState()

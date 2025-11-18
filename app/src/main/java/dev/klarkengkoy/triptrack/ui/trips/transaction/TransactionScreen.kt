@@ -53,12 +53,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,66 +63,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.PaymentMethod
+import dev.klarkengkoy.triptrack.ui.components.AmountVisualTransformation
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.theme.customColors
-import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
-
-private class AmountVisualTransformation(
-    private val currencySymbol: String
-) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val originalText = text.text
-        if (originalText.isEmpty()) {
-            return TransformedText(text, OffsetMapping.Identity)
-        }
-
-        // Format the integer part with thousand separators
-        val integerPart = originalText.substringBefore('.')
-        val decimalPart = originalText.substringAfter('.', "")
-
-        val formattedInteger = if (integerPart.isNotEmpty()) {
-            NumberFormat.getNumberInstance(Locale.US).format(integerPart.toLong())
-        } else {
-            ""
-        }
-
-        val formattedText = if (decimalPart.isNotEmpty() || originalText.endsWith(".")) {
-            "$formattedInteger.$decimalPart"
-        } else {
-            formattedInteger
-        }
-
-        val annotatedString = AnnotatedString("$formattedText $currencySymbol")
-
-        val offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                val originalIntegerLen = integerPart.length
-                val formattedIntegerLen = formattedInteger.length
-                val commas = formattedIntegerLen - originalIntegerLen
-
-                return when {
-                    offset == 0 -> 0
-                    offset <= originalIntegerLen -> {
-                        // Count commas before the cursor in the integer part
-                        val textBeforeCursor = integerPart.take(offset)
-                        val formattedTextBeforeCursor = NumberFormat.getNumberInstance(Locale.US).format(textBeforeCursor.toLong())
-                        offset + formattedTextBeforeCursor.count { it == ',' }
-                    }
-                    else -> offset + commas // Cursor is in the decimal part
-                }
-            }
-
-            override fun transformedToOriginal(offset: Int): Int {
-                val commas = formattedText.take(offset).count { it == ',' }
-                return (offset - commas).coerceIn(0, originalText.length)
-            }
-        }
-        return TransformedText(annotatedString, offsetMapping)
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -172,8 +113,8 @@ fun TransactionScreen(
         modifier = modifier,
         uiState = uiState,
         onAmountChange = {
-            val regex = Regex("^\\d*\\.?\\d{0,2}$")
-            if (it.matches(regex)) {
+            val regex = Regex("""^\d*\.?\d{0,2}$""")
+            if (it.matches(regex) && it.substringBefore('.').length <= 15) {
                 viewModel.onAmountChange(it)
             }
         },

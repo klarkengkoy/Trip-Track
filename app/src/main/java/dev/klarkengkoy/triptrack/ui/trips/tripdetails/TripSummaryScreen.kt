@@ -109,13 +109,13 @@ private fun AddTripSummaryContent(
                 val formatted = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)
                 add("End Date" to formatted)
             }
-            tripUiState.totalBudget?.let {
+            if (tripUiState.totalBudget.isNotEmpty()) {
                 val numberFormat = NumberFormat.getNumberInstance()
-                add("Total Budget" to "$currencySymbol ${numberFormat.format(it)}")
+                add("Total Budget" to "$currencySymbol ${numberFormat.format(tripUiState.totalBudget.toDouble())}")
             }
-            tripUiState.dailyBudget?.let {
+            if (tripUiState.dailyBudget.isNotEmpty()) {
                 val numberFormat = NumberFormat.getNumberInstance()
-                add("Daily Budget" to "$currencySymbol ${numberFormat.format(it)}")
+                add("Daily Budget" to "$currencySymbol ${numberFormat.format(tripUiState.dailyBudget.toDouble())}")
             }
         }
     }
@@ -263,8 +263,8 @@ private fun AddTripSummaryScreenPreview_Full() {
                 currency = "JPY",
                 startDate = Instant.now().toEpochMilli(),
                 endDate = Instant.now().plus(7, ChronoUnit.DAYS).toEpochMilli(),
-                totalBudget = 200000.0,
-                dailyBudget = 25000.0,
+                totalBudget = "200000.0",
+                dailyBudget = "25000.0",
                 imageUri = "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&id=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
             ),
             onSaveTrip = {},
@@ -284,8 +284,8 @@ private fun AddTripSummaryScreenPreview_Partial() {
                 currency = "USD",
                 startDate = null,
                 endDate = null,
-                totalBudget = 500.0,
-                dailyBudget = null
+                totalBudget = "500.0",
+                dailyBudget = ""
             ),
             onSaveTrip = {},
             onDiscard = {},

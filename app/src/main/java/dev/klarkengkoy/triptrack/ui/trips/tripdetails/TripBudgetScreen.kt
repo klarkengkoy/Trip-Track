@@ -20,11 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,10 +32,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.klarkengkoy.triptrack.ui.components.AmountVisualTransformation
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 import java.util.Currency
-import java.util.Locale
 
 @Composable
 fun TripBudgetScreen(
@@ -53,8 +50,18 @@ fun TripBudgetScreen(
         totalBudget = uiState.tripUiState.totalBudget,
         dailyBudget = uiState.tripUiState.dailyBudget,
         currencyCode = uiState.tripUiState.currency,
-        onTotalBudgetChanged = { viewModel.onTotalBudgetChanged(it) },
-        onDailyBudgetChanged = { viewModel.onDailyBudgetChanged(it) },
+        onTotalBudgetChanged = {
+            val regex = Regex("""^\d*\.?\d{0,2}$""")
+            if (it.matches(regex) && it.substringBefore('.').length <= 15) {
+                viewModel.onTotalBudgetChanged(it)
+            }
+        },
+        onDailyBudgetChanged = {
+            val regex = Regex("""^\d*\.?\d{0,2}$""")
+            if (it.matches(regex) && it.substringBefore('.').length <= 15) {
+                viewModel.onDailyBudgetChanged(it)
+            }
+        },
         onNextClicked = onNavigateNext,
         onSkipClicked = {
             // Clear any budget info before navigating
@@ -68,30 +75,16 @@ fun TripBudgetScreen(
 @Composable
 private fun AddTripBudgetContent(
     modifier: Modifier = Modifier,
-    totalBudget: Double?,
-    dailyBudget: Double?,
+    totalBudget: String,
+    dailyBudget: String,
     currencyCode: String,
     onTotalBudgetChanged: (String) -> Unit,
     onDailyBudgetChanged: (String) -> Unit,
     onNextClicked: () -> Unit,
     onSkipClicked: () -> Unit
 ) {
-    var totalBudgetInput by remember { mutableStateOf("") }
-    var dailyBudgetInput by remember { mutableStateOf("") }
     val colorScheme = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
-
-    LaunchedEffect(totalBudget) {
-        if (totalBudgetInput.toDoubleOrNull() != totalBudget) {
-            totalBudgetInput = formatBudget(totalBudget)
-        }
-    }
-
-    LaunchedEffect(dailyBudget) {
-        if (dailyBudgetInput.toDoubleOrNull() != dailyBudget) {
-            dailyBudgetInput = formatBudget(dailyBudget)
-        }
-    }
 
     val currencySymbol = remember(currencyCode) {
         try {
@@ -121,16 +114,13 @@ private fun AddTripBudgetContent(
 
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                colors = CardDefaults.elevatedCardColors(containerColor = colorScheme.secondaryContainer)
             ) {
                 BudgetInputListItem(
                     label = "Total Budget",
-                    value = totalBudgetInput,
+                    value = totalBudget,
                     currencySymbol = currencySymbol,
-                    onValueChanged = {
-                        totalBudgetInput = it
-                        onTotalBudgetChanged(it)
-                    }
+                    onValueChanged = onTotalBudgetChanged
                 )
             }
 
@@ -145,16 +135,13 @@ private fun AddTripBudgetContent(
 
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                colors = CardDefaults.elevatedCardColors(containerColor = colorScheme.secondaryContainer)
             ) {
                 BudgetInputListItem(
                     label = "Daily Budget",
-                    value = dailyBudgetInput,
+                    value = dailyBudget,
                     currencySymbol = currencySymbol,
-                    onValueChanged = {
-                        dailyBudgetInput = it
-                        onDailyBudgetChanged(it)
-                    }
+                    onValueChanged = onDailyBudgetChanged
                 )
             }
         }
@@ -166,7 +153,7 @@ private fun AddTripBudgetContent(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val budgetIsSet = totalBudget != null || dailyBudget != null
+            val budgetIsSet = totalBudget.isNotEmpty() || dailyBudget.isNotEmpty()
             if (budgetIsSet) {
                 Button(
                     onClick = onNextClicked,
@@ -189,9 +176,11 @@ private fun BudgetInputListItem(
     currencySymbol: String,
     onValueChanged: (String) -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
     ListItem(
         colors = ListItemDefaults.colors(
-            headlineColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            headlineColor = colorScheme.onSecondaryContainer,
             containerColor = Color.Transparent
         ),
         headlineContent = {
@@ -200,34 +189,24 @@ private fun BudgetInputListItem(
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (currencySymbol.isNotBlank()) {
-                    Text(currencySymbol, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(currencySymbol, style = typography.bodyLarge, color = colorScheme.onSecondaryContainer)
                     Spacer(modifier = Modifier.width(4.dp))
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChanged,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    textStyle = typography.bodyLarge.copy(
+                        color = colorScheme.onSecondaryContainer,
                         textAlign = TextAlign.End
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    visualTransformation = AmountVisualTransformation(currencySymbol),
                     singleLine = true,
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSecondaryContainer)
+                    cursorBrush = SolidColor(colorScheme.onSecondaryContainer)
                 )
             }
         }
     )
-}
-
-private fun formatBudget(budget: Double?): String {
-    if (budget == null) return ""
-    // If it's a whole number, display as an integer.
-    return if (budget % 1.0 == 0.0) {
-        budget.toLong().toString()
-    } else {
-        // Otherwise, format to 2 decimal places.
-        String.format(Locale.US, "%.2f", budget)
-    }
 }
 
 @Preview(showBackground = true, name = "With Budget")
@@ -235,8 +214,8 @@ private fun formatBudget(budget: Double?): String {
 private fun AddTripBudgetScreenPreview_WithBudget() {
     TripTrackTheme {
         AddTripBudgetContent(
-            totalBudget = 1000.0,
-            dailyBudget = 100.0,
+            totalBudget = "1000.00",
+            dailyBudget = "100.00",
             currencyCode = "USD",
             onTotalBudgetChanged = {},
             onDailyBudgetChanged = {},
@@ -251,8 +230,8 @@ private fun AddTripBudgetScreenPreview_WithBudget() {
 private fun AddTripBudgetScreenPreview_NoBudget() {
     TripTrackTheme {
         AddTripBudgetContent(
-            totalBudget = null,
-            dailyBudget = null,
+            totalBudget = "",
+            dailyBudget = "",
             currencyCode = "USD",
             onTotalBudgetChanged = {},
             onDailyBudgetChanged = {},

@@ -2,13 +2,13 @@ package dev.klarkengkoy.triptrack.model
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.Attractions
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Hotel
-import androidx.compose.material.icons.filled.Label
 import androidx.compose.material.icons.filled.LocalActivity
 import androidx.compose.material.icons.filled.LocalBar
 import androidx.compose.material.icons.filled.LocalGroceryStore
@@ -25,7 +25,7 @@ sealed class TransactionCategory(val title: String, val icon: ImageVector, val r
     object Entertainment : TransactionCategory("Entertainment", Icons.Default.LocalActivity, "entertainment")
     object FeesAndCharges : TransactionCategory("Fees & Charges", Icons.Default.Receipt, "fees_and_charges")
     object Flights : TransactionCategory("Flights", Icons.Default.Flight, "flights")
-    object General : TransactionCategory("General", Icons.Default.Label, "general")
+    object General : TransactionCategory("General", Icons.AutoMirrored.Filled.Label, "general")
     object GiftsAndSouvenirs : TransactionCategory("Gifts & Souvenirs", Icons.Default.CardGiftcard, "gifts_and_souvenirs")
     object Groceries : TransactionCategory("Groceries", Icons.Default.LocalGroceryStore, "groceries")
     object Insurance : TransactionCategory("Insurance", Icons.Default.HealthAndSafety, "insurance")
