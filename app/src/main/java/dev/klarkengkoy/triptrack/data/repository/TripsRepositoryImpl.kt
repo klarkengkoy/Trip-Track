@@ -80,6 +80,10 @@ class TripsRepositoryImpl @Inject constructor(
         getTripTransactionsCollection(transaction.tripId)?.document(transaction.id)?.set(FirebaseTransaction.fromTransaction(transaction))?.await()
     }
 
+    override fun getTransactions(tripId: String): Flow<List<Transaction>> {
+        return tripDao.getTransactions(tripId)
+    }
+
     override suspend fun setActiveTrip(tripId: String, isActive: Boolean) {
         val idToSave = if (isActive) tripId else null
         userDataStore.setActiveTripId(idToSave)

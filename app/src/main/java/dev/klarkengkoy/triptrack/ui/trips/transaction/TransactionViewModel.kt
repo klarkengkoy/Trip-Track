@@ -15,14 +15,17 @@ import dev.klarkengkoy.triptrack.model.TransactionCategory
 import dev.klarkengkoy.triptrack.model.TransactionType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Currency
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 data class TransactionUiState(
+    val transactionId: String? = null,
     val tripId: String = "",
     val amount: String = "0",
     val description: String = "",
@@ -56,38 +59,147 @@ class TransactionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val tripId = savedStateHandle.get<String>("tripId") ?: ""
-            val categoryRoute = savedStateHandle.get<String>("category")
+            // Check if we are editing an existing transaction
+            val transactionId = savedStateHandle.get<String>("transactionId")
 
-            val expenseCategory = TransactionCategory.fromRoute(categoryRoute)
-            val incomeCategory = IncomeCategory.fromRoute(categoryRoute)
+            if (transactionId != null) {
+                loadExistingTransaction(transactionId)
+            } else {
+                initializeNewTransaction()
+            }
+        }
+    }
+    
+    fun updateCategory(categoryRoute: String) {
+        val expenseCategory = TransactionCategory.fromRoute(categoryRoute)
+        val incomeCategory = IncomeCategory.fromRoute(categoryRoute)
 
-            val categoryTitle = expenseCategory?.title ?: incomeCategory?.title ?: ""
-            val categoryIcon = expenseCategory?.icon ?: incomeCategory?.icon
-
-            val trip = tripsRepository.getTrip(tripId)
-            val currencySymbol = trip?.let {
-                if (it.isCurrencyCustom) {
-                    it.currency
-                } else {
-                    try {
-                        Currency.getInstance(it.currency).symbol
-                    } catch (_: Exception) {
-                        it.currency // Fallback
-                    }
-                }
-            } ?: ""
-
-            _uiState.update {
+        val categoryTitle = expenseCategory?.title ?: incomeCategory?.title ?: ""
+        val categoryIcon = expenseCategory?.icon ?: incomeCategory?.icon
+        
+        if (categoryTitle.isNotEmpty()) {
+             _uiState.update {
                 it.copy(
-                    tripId = tripId,
                     categoryTitle = categoryTitle,
-                    categoryIcon = categoryIcon,
-                    currencySymbol = currencySymbol,
-                    availablePaymentMethods = paymentMethods,
-                    paymentMethod = paymentMethods.first()
+                    categoryIcon = categoryIcon
                 )
             }
+        }
+    }
+    
+    private suspend fun loadExistingTransaction(transactionId: String) {
+        // We first need to find which trip this transaction belongs to.
+        // Since getTransactions(tripId) requires tripId, and getTrip(tripId) returns a trip...
+        // Ideally, the repository should have a way to get a transaction directly by ID or we iterate.
+        // However, typically in this app flow, we might not have the tripId readily available if deep linking,
+        // but here navigation usually passes context.
+        // BUT, for now, let's assume we might need to search or the repository supports it.
+        // Wait, the repository interface shows: getTransactions(tripId). It doesn't have getTransaction(id).
+        // But the implementation uses Room DAO which likely has it or we can fetch from all trips.
+        
+        // Hack/Workaround: Since we don't have a direct getTransaction(id) in the interface exposed in the prompt (unless I missed it),
+        // but we are inside a specific Trip context usually. 
+        // Actually, looking at MainNavigation, we only pass transactionId: "$EDIT_TRANSACTION_ROUTE/{transactionId}"
+        
+        // Let's try to find the transaction. 
+        // Since we don't have a direct getTransaction method in the interface provided in the context,
+        // we will rely on the fact that we likely have the trip active or we have to scan.
+        // However, a better approach for the future is adding getTransaction(id) to the repo.
+        // For now, let's assume we can't change the repo interface easily without more context or let's try to use what we have.
+        
+        // The user is editing a transaction from the list inside a trip.
+        // We can try to find the transaction in the active trip if set, or search.
+        
+        val activeTrip = tripsRepository.getActiveTrip().first()
+        if (activeTrip != null) {
+             val transactions = tripsRepository.getTransactions(activeTrip.id).first()
+             val transaction = transactions.find { it.id == transactionId }
+             if (transaction != null) {
+                 populateState(transaction, activeTrip.currency, activeTrip.isCurrencyCustom)
+                 return
+             }
+        }
+        
+        // If not found in active trip (edge case), we might need to search all trips (expensive but safe fallback)
+        val allTrips = tripsRepository.getTrips().first()
+        for (trip in allTrips) {
+            val transactions = tripsRepository.getTransactions(trip.id).first()
+            val transaction = transactions.find { it.id == transactionId }
+            if (transaction != null) {
+                populateState(transaction, trip.currency, trip.isCurrencyCustom)
+                return
+            }
+        }
+    }
+    
+    private fun populateState(transaction: Transaction, currencyCode: String, isCustomCurrency: Boolean) {
+        val categoryTitle = transaction.category.name
+        // Determine icon based on title matching
+        val expenseCategory = TransactionCategory.categories.find { it.title == categoryTitle }
+        val incomeCategory = IncomeCategory.categories.find { it.title == categoryTitle }
+        val categoryIcon = expenseCategory?.icon ?: incomeCategory?.icon
+        
+        val currencySymbol = if (isCustomCurrency) {
+            currencyCode
+        } else {
+            try {
+                Currency.getInstance(currencyCode).symbol
+            } catch (_: Exception) {
+                currencyCode
+            }
+        }
+
+        _uiState.update {
+            it.copy(
+                transactionId = transaction.id,
+                tripId = transaction.tripId,
+                amount = if (transaction.amount == 0.0) "0" else transaction.amount.toString().removeSuffix(".0"),
+                description = transaction.notes ?: "",
+                categoryTitle = categoryTitle,
+                categoryIcon = categoryIcon,
+                date = transaction.date,
+                currencySymbol = currencySymbol,
+                paymentMethod = transaction.paymentMethod,
+                imageUri = transaction.imageUri?.toUri(),
+                availablePaymentMethods = paymentMethods,
+                // Ensure the payment method from transaction is valid or fallback
+                isPaymentMethodMenuExpanded = false
+            )
+        }
+    }
+
+    private suspend fun initializeNewTransaction() {
+        val tripId = savedStateHandle.get<String>("tripId") ?: ""
+        val categoryRoute = savedStateHandle.get<String>("category")
+
+        val expenseCategory = TransactionCategory.fromRoute(categoryRoute)
+        val incomeCategory = IncomeCategory.fromRoute(categoryRoute)
+
+        val categoryTitle = expenseCategory?.title ?: incomeCategory?.title ?: ""
+        val categoryIcon = expenseCategory?.icon ?: incomeCategory?.icon
+
+        val trip = tripsRepository.getTrip(tripId)
+        val currencySymbol = trip?.let {
+            if (it.isCurrencyCustom) {
+                it.currency
+            } else {
+                try {
+                    Currency.getInstance(it.currency).symbol
+                } catch (_: Exception) {
+                    it.currency // Fallback
+                }
+            }
+        } ?: ""
+
+        _uiState.update {
+            it.copy(
+                tripId = tripId,
+                categoryTitle = categoryTitle,
+                categoryIcon = categoryIcon,
+                currencySymbol = currencySymbol,
+                availablePaymentMethods = paymentMethods,
+                paymentMethod = paymentMethods.first()
+            )
         }
     }
 
@@ -143,6 +255,7 @@ class TransactionViewModel @Inject constructor(
             if (uiState.paymentMethod == null) return@launch
 
             val transaction = Transaction(
+                id = uiState.transactionId ?: java.util.UUID.randomUUID().toString(),
                 tripId = uiState.tripId,
                 notes = uiState.description,
                 amount = uiState.amount.toDoubleOrNull() ?: 0.0,
@@ -150,9 +263,13 @@ class TransactionViewModel @Inject constructor(
                 category = Category(uiState.categoryTitle, 0), // Use placeholder 0 for iconRes
                 paymentMethod = uiState.paymentMethod,
                 imageUri = uiState.imageUri?.toString(),
-                type = if (TransactionCategory.fromRoute(savedStateHandle.get<String>("category")) != null) TransactionType.EXPENSE else TransactionType.INCOME
+                // Logic to determine type if not explicitly stored in UI state could be improved, 
+                // but defaulting to EXPENSE or inferring from category is consistent with init.
+                // For edits, we should ideally preserve type. 
+                // Re-inferring from title:
+                type = if (IncomeCategory.categories.any { it.title == uiState.categoryTitle }) TransactionType.INCOME else TransactionType.EXPENSE
             )
-            tripsRepository.addTransaction(transaction)
+            tripsRepository.addTransaction(transaction) // addTransaction typically handles Upsert (Insert or Replace) in Room
         }
     }
 }

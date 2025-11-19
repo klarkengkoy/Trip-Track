@@ -35,6 +35,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,12 +62,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.PaymentMethod
 import dev.klarkengkoy.triptrack.ui.components.AmountVisualTransformation
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
-import dev.klarkengkoy.triptrack.ui.theme.customColors
+import dev.klarkengkoy.triptrack.ui.theme.getCategoryColor
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -74,9 +77,28 @@ import java.time.format.FormatStyle
 fun TransactionScreen(
     modifier: Modifier = Modifier,
     viewModel: TransactionViewModel = hiltViewModel(),
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onCategoryClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Observe navigation results for category updates
+    val context = LocalContext.current
+
+    val viewModelStoreOwner = androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner.current
+    
+    LaunchedEffect(viewModelStoreOwner) {
+        if (viewModelStoreOwner is NavBackStackEntry) {
+            val savedStateHandle = viewModelStoreOwner.savedStateHandle
+            // Observe "category" result
+            savedStateHandle.getLiveData<String>("category").observeForever { category ->
+                if (category != null) {
+                    viewModel.updateCategory(category)
+                    savedStateHandle.remove<String>("category") // Clear it so it doesn't re-trigger
+                }
+            }
+        }
+    }
 
     if (uiState.isDatePickerVisible) {
         val datePickerState = rememberDatePickerState()
@@ -97,7 +119,6 @@ fun TransactionScreen(
         }
     }
 
-    val context = LocalContext.current
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri: Uri? ->
@@ -124,6 +145,7 @@ fun TransactionScreen(
         onPaymentMethodMenuToggled = viewModel::onPaymentMethodMenuToggled,
         onLocationChange = viewModel::onLocationChange,
         onAddPhotoClick = { imagePickerLauncher.launch("image/*") },
+        onCategoryClick = onCategoryClick,
         onSave = {
             // TODO(klarkengkoy): Complete Save Transaction feature
             viewModel.saveTransaction()
@@ -140,31 +162,6 @@ private fun paymentMethodIcon(paymentMethodName: String?): ImageVector {
         "Debit Card" -> Icons.Default.Wallet
         "Bank Transfer" -> Icons.Default.AccountBalance
         else -> Icons.Default.Wallet
-    }
-}
-
-@Composable
-private fun getCategoryColor(categoryTitle: String): Color {
-    return when (categoryTitle) {
-        "Accommodation" -> MaterialTheme.customColors.accommodation
-        "Activities" -> MaterialTheme.customColors.activities
-        "Drinks" -> MaterialTheme.customColors.drinks
-        "Entertainment" -> MaterialTheme.customColors.entertainment
-        "Fees & Charges" -> MaterialTheme.customColors.feesAndCharges
-        "Flights" -> MaterialTheme.customColors.flights
-        "General" -> MaterialTheme.customColors.general
-        "Gifts & Souvenirs" -> MaterialTheme.customColors.giftsAndSouvenirs
-        "Groceries" -> MaterialTheme.customColors.groceries
-        "Insurance" -> MaterialTheme.customColors.insurance
-        "Laundry" -> MaterialTheme.customColors.laundry
-        "Restaurants" -> MaterialTheme.customColors.restaurants
-        "Shopping" -> MaterialTheme.customColors.shopping
-        "Tours & Entry" -> MaterialTheme.customColors.toursAndEntry
-        "Transportation" -> MaterialTheme.customColors.transportation
-        "Salary" -> MaterialTheme.customColors.salary
-        "Gifts" -> MaterialTheme.customColors.gift
-        "Other Income" -> MaterialTheme.customColors.other
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
 
@@ -217,6 +214,7 @@ fun TransactionContent(
     onPaymentMethodMenuToggled: (Boolean) -> Unit = {},
     onLocationChange: (String) -> Unit = {},
     onAddPhotoClick: () -> Unit = {},
+    onCategoryClick: () -> Unit = {},
     onSave: () -> Unit = {}
 ) {
     Column(
@@ -235,11 +233,13 @@ fun TransactionContent(
             visualTransformation = AmountVisualTransformation(uiState.currencySymbol),
             leadingIcon = {
                 if (uiState.categoryIcon != null) {
-                    Icon(
-                        imageVector = uiState.categoryIcon,
-                        contentDescription = null,
-                        tint = categoryColor
-                    )
+                    IconButton(onClick = onCategoryClick) {
+                        Icon(
+                            imageVector = uiState.categoryIcon,
+                            contentDescription = "Change Category",
+                            tint = categoryColor
+                        )
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),

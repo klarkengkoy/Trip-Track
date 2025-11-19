@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -50,18 +51,20 @@ class LoginViewModel @Inject constructor(
     private val _signInEvent = MutableSharedFlow<SignInEvent>()
     val signInEvent = _signInEvent.asSharedFlow()
 
-    val isUserSignedIn: StateFlow<Boolean> = authRepository.isUserSignedIn
+    // Changed from StateFlow<Boolean> to StateFlow<Boolean?> to support "Loading" state
+    val isUserSignedIn: StateFlow<Boolean?> = authRepository.isUserSignedIn
+        .map { it as Boolean? } // Explicit cast for clarity, though mostly redundant
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
+            initialValue = null // Null means "checking auth state"
         )
 
     init {
         viewModelScope.launch {
             isUserSignedIn.collect { isSignedIn ->
                 _isLoading.value = false
-                if (isSignedIn) {
+                if (isSignedIn == true) {
                     tripsRepository.syncTrips()
                 }
             }

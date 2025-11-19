@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -24,9 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -43,6 +46,7 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
  * This composable observes the user's sign-in state and displays either the
  * main app content (with bottom navigation) or the login flow.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TripTrackScreen(
     loginViewModel: LoginViewModel,
@@ -54,27 +58,24 @@ fun TripTrackScreen(
     val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val activeTripUiState by mainViewModel.activeTripUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(isSignedIn) {
-        if (!isSignedIn) {
-            navController.navigate("trips") {
-                popUpTo(navController.graph.findStartDestination().id) {
-                    inclusive = true
-                }
-                launchSingleTop = true
+    when (isSignedIn) {
+        true -> {
+            MainScreen(
+                snackbarHostState = snackbarHostState,
+                navController = navController,
+                mainUiState = mainUiState,
+                activeTripUiState = activeTripUiState,
+                setTopAppBar = { mainViewModel.setTopAppBarState(it.title, it.navigationIcon, it.actions, it.isCenterAligned) }
+            )
+        }
+        false -> {
+            LoginNavigation(viewModel = loginViewModel)
+        }
+        null -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                LoadingIndicator(modifier = Modifier.size(128.dp))
             }
         }
-    }
-
-    if (isSignedIn) {
-        MainScreen(
-            snackbarHostState = snackbarHostState,
-            navController = navController,
-            mainUiState = mainUiState,
-            activeTripUiState = activeTripUiState,
-            setTopAppBar = { mainViewModel.setTopAppBarState(it.title, it.navigationIcon, it.actions, it.isCenterAligned) }
-        )
-    } else {
-        LoginNavigation(viewModel = loginViewModel)
     }
 }
 

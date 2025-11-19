@@ -45,6 +45,7 @@ import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripSummaryScreen
 const val ADD_TRIP_ROUTE = "addTrip"
 const val EDIT_TRIP_ROUTE = "editTrip"
 const val ADD_TRANSACTION_ROUTE = "addTransaction"
+const val EDIT_TRANSACTION_ROUTE = "editTransaction"
 
 private const val ANIMATION_DURATION = 700
 
@@ -104,11 +105,13 @@ private fun NavGraphBuilder.tripsGraph(
             setTopAppBar = setTopAppBar,
             onAddTrip = { navController.navigate(ADD_TRIP_ROUTE) },
             onAddTransaction = { tripId -> navController.navigate("$ADD_TRANSACTION_ROUTE/$tripId") },
-            onEditTrip = { tripId -> navController.navigate("$EDIT_TRIP_ROUTE/$tripId") }
+            onEditTrip = { tripId -> navController.navigate("$EDIT_TRIP_ROUTE/$tripId") },
+            onEditTransaction = { transactionId -> navController.navigate("$EDIT_TRANSACTION_ROUTE/$transactionId") }
         )
     }
 
     addTransactionGraph(navController, setTopAppBar)
+    editTransactionGraph(navController, setTopAppBar)
     addTripGraph(navController, setTopAppBar)
     editTripGraph(navController, setTopAppBar)
 }
@@ -141,6 +144,7 @@ private fun NavGraphBuilder.addTransactionGraph(
         }
 
         composable("addTransactionDetails/{tripId}/{category}") { 
+            val tripId = it.arguments?.getString("tripId") ?: ""
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Transaction") },
@@ -154,13 +158,91 @@ private fun NavGraphBuilder.addTransactionGraph(
                     }
                 ))
             }
-            TransactionScreen(onSave = {
-                navController.navigate("trips") {
-                    popUpTo("$ADD_TRANSACTION_ROUTE/{tripId}") { inclusive = true }
+            TransactionScreen(
+                onSave = {
+                    navController.navigate("trips") {
+                        popUpTo("$ADD_TRANSACTION_ROUTE/{tripId}") { inclusive = true }
+                    }
+                },
+                onCategoryClick = {
+                    navController.navigate("addTransactionCategory") {
+                         popUpTo("addTransactionDetails/$tripId/{category}") { inclusive = true }
+                    }
                 }
-            })
+            )
         }
     }
+}
+
+// Placeholder for Edit Transaction Graph - needs full implementation details similar to Add
+private fun NavGraphBuilder.editTransactionGraph(
+    navController: NavHostController,
+    setTopAppBar: (TopAppBarState) -> Unit
+) {
+     // Basic placeholder to resolve compilation error for now. 
+     // You will need to implement fetching the existing transaction and pre-filling the TransactionScreen.
+     navigation(startDestination = "editTransactionDetails", route = "$EDIT_TRANSACTION_ROUTE/{transactionId}") {
+         composable("editTransactionDetails") { backStackEntry ->
+             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+             
+             LaunchedEffect(Unit) {
+                 setTopAppBar(TopAppBarState(
+                     title = { Text("Edit Transaction") },
+                     navigationIcon = {
+                         IconButton(onClick = { navController.navigateUp() }) {
+                             Icon(
+                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                 contentDescription = stringResource(R.string.cd_navigate_up)
+                             )
+                         }
+                     }
+                 ))
+             }
+             
+             TransactionScreen(
+                 onSave = { navController.navigateUp() },
+                 onCategoryClick = { 
+                     navController.navigate("editTransactionCategory/$transactionId") 
+                 }
+             )
+         }
+         
+         composable("editTransactionCategory/{transactionId}") { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
+
+            LaunchedEffect(Unit) {
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Select a Category") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.cd_navigate_up)
+                            )
+                        }
+                    }
+                ))
+            }
+
+            CategoryScreen(onCategorySelected = { category ->
+                // We navigate back to details, passing the NEW category as an argument.
+                // NOTE: This requires TransactionViewModel to look for this argument when recomposing or re-initializing?
+                // Or better, we just navigate back and let the ViewModel pick it up from the savedStateHandle if we passed it back.
+                // A simpler approach for now: Navigate to a route that looks like the details route but with category param,
+                // similar to Add flow. However, editTransactionDetails currently only takes {transactionId}.
+                // We should probably update the editTransactionDetails route to optionally take a category override, 
+                // or update the ViewModel to listen to a result. 
+                
+                // For simplicity and consistency with ADD flow, let's route back to the details screen
+                // but we need a way to tell the ViewModel "Hey, use this new category".
+                // The Add flow works because the route IS "addTransactionDetails/{tripId}/{category}".
+                // Let's make the Edit flow work similarly if possible, or pass it back via SavedStateHandle.
+                
+                navController.previousBackStackEntry?.savedStateHandle?.set("category", category)
+                navController.popBackStack()
+            })
+        }
+     }
 }
 
 private fun NavGraphBuilder.addTripGraph(
@@ -596,7 +678,7 @@ private fun NavGraphBuilder.editTripGraph(
                 },
                 onDiscard = {
                     viewModel.resetAddTripState()
-                    navController.navigate("tri_ps") {
+                    navController.navigate("trips") {
                         popUpTo("$EDIT_TRIP_ROUTE/{tripId}") { inclusive = true }
                     }
                 },

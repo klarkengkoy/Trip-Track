@@ -7,10 +7,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.data.repository.TripsRepository
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,14 +28,11 @@ data class TripsUiState(
     val isDataLoaded: Boolean = false,
     val selectedTrip: Trip? = null,
     val trips: List<Trip> = emptyList(),
-    val transactionsByTrip: Map<String, List<Transaction>> = emptyMap(),
+    val selectedTripTransactions: List<Transaction> = emptyList(), // Directly exposed
     val tripUiState: TripUiState = TripUiState(),
     val selectionMode: Boolean = false,
     val selectedTrips: Set<String> = emptySet()
-) {
-    val selectedTripTransactions: List<Transaction>
-        get() = selectedTrip?.let { transactionsByTrip[it.id] }.orEmpty()
-}
+)
 
 data class TripUiState(
     val tripName: String = "",
@@ -60,38 +60,65 @@ class TripsViewModel @Inject constructor(
     private val _selectedTrips = MutableStateFlow<Set<String>>(emptySet())
     private val _manualSelectedTripId = MutableStateFlow<String?>(null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _transactionsFlow = combine(
+        tripsRepository.getActiveTrip(),
+        _manualSelectedTripId
+    ) { activeTrip, manualSelectedId ->
+        manualSelectedId ?: activeTrip?.id
+    }.flatMapLatest { tripId ->
+        if (tripId != null) {
+            tripsRepository.getTransactions(tripId)
+        } else {
+            flowOf(emptyList())
+        }
+    }
+
+    // Helper data classes for combine to avoid tuple limitation
+    private data class TripsData(
+        val trips: List<Trip>,
+        val activeTrip: Trip?,
+        val manualSelectedId: String?,
+        val transactions: List<Transaction>
+    )
+
+    private data class TripsUiInput(
+        val tripUiState: TripUiState,
+        val selectionMode: Boolean,
+        val selectedTrips: Set<String>
+    )
+
     // The main public UI state, derived reactively from multiple flows
     val uiState: StateFlow<TripsUiState> = combine(
+        tripsRepository.getTrips(),
+        tripsRepository.getActiveTrip(),
+        _manualSelectedTripId,
+        _transactionsFlow
+    ) { trips, activeTrip, manualSelectedId, transactions ->
+        TripsData(trips, activeTrip, manualSelectedId, transactions)
+    }.combine(
         combine(
-            tripsRepository.getTrips(),
-            tripsRepository.getActiveTrip(),
-            _manualSelectedTripId,
             _tripUiState,
-            _selectionMode
-        ) { trips, activeTrip, manualSelectedId, tripUiState, selectionMode ->
-            object {
-                val trips = trips
-                val activeTrip = activeTrip
-                val manualSelectedId = manualSelectedId
-                val tripUiState = tripUiState
-                val selectionMode = selectionMode
-            }
-        },
-        _selectedTrips
-    ) { intermediate, selectedTrips ->
-        val finalSelectedTrip = if (intermediate.manualSelectedId != null) {
-            intermediate.trips.find { it.id == intermediate.manualSelectedId }
+            _selectionMode,
+            _selectedTrips
+        ) { tripUiState, selectionMode, selectedTrips ->
+            TripsUiInput(tripUiState, selectionMode, selectedTrips)
+        }
+    ) { data, ui ->
+        val finalSelectedTrip = if (data.manualSelectedId != null) {
+            data.trips.find { it.id == data.manualSelectedId }
         } else {
-            intermediate.activeTrip
+            data.activeTrip
         }
 
         TripsUiState(
             isDataLoaded = true, // We only emit once all streams are ready
             selectedTrip = finalSelectedTrip,
-            trips = intermediate.trips,
-            tripUiState = intermediate.tripUiState,
-            selectionMode = intermediate.selectionMode,
-            selectedTrips = selectedTrips
+            trips = data.trips,
+            selectedTripTransactions = data.transactions,
+            tripUiState = ui.tripUiState,
+            selectionMode = ui.selectionMode,
+            selectedTrips = ui.selectedTrips
         )
     }.stateIn(
         scope = viewModelScope,
@@ -111,8 +138,9 @@ class TripsViewModel @Inject constructor(
         viewModelScope.launch {
             // Set the trip as active in our DataStore
             tripsRepository.setActiveTrip(tripId, true)
-            // Clear any manual override so the active trip from DataStore becomes the source of truth
-            _manualSelectedTripId.value = null
+            // NOTE: We do NOT clear the manual override here anymore.
+            // Clearing it causes a race condition where 'manualSelectedId' becomes null
+            // BEFORE 'activeTrip' from DataStore updates, causing a momentary null selectedTrip.
         }
     }
 

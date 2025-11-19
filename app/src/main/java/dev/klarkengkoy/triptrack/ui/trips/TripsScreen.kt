@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -49,6 +51,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,12 +62,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.Category
+import dev.klarkengkoy.triptrack.model.IncomeCategory
 import dev.klarkengkoy.triptrack.model.PaymentMethod
 import dev.klarkengkoy.triptrack.model.Transaction
+import dev.klarkengkoy.triptrack.model.TransactionCategory
 import dev.klarkengkoy.triptrack.model.TransactionType
 import dev.klarkengkoy.triptrack.model.Trip
 import dev.klarkengkoy.triptrack.ui.TopAppBarState
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
+import dev.klarkengkoy.triptrack.ui.theme.getCategoryColor
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -83,7 +89,8 @@ fun TripsScreen(
     setTopAppBar: (TopAppBarState) -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: (String) -> Unit,
-    onEditTrip: (String) -> Unit
+    onEditTrip: (String) -> Unit,
+    onEditTransaction: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -109,7 +116,8 @@ fun TripsScreen(
         onToggleTripSelection = { tripId -> viewModel.toggleTripSelection(tripId) },
         onSelectAllTrips = { viewModel.selectAllTrips() },
         onClearSelectedTrips = { viewModel.clearSelectedTrips() },
-        onDeleteSelectedTrips = { viewModel.deleteSelectedTrips() }
+        onDeleteSelectedTrips = { viewModel.deleteSelectedTrips() },
+        onEditTransaction = onEditTransaction
     )
 }
 
@@ -126,13 +134,14 @@ private fun TripsScreenContent(
     onDeactivateTrip: () -> Unit,
     onAddTrip: () -> Unit,
     onAddTransaction: () -> Unit,
-    onEditTrip: () -> Unit,
+    onEditTrip: (String) -> Unit,
     onEnterSelectionMode: (String) -> Unit,
     onExitSelectionMode: () -> Unit,
     onToggleTripSelection: (String) -> Unit,
     onSelectAllTrips: () -> Unit,
     onClearSelectedTrips: () -> Unit,
-    onDeleteSelectedTrips: () -> Unit
+    onDeleteSelectedTrips: () -> Unit,
+    onEditTransaction: (String) -> Unit
 ) {
     val selectedTrip = uiState.selectedTrip
     val selectionMode = uiState.selectionMode
@@ -180,7 +189,7 @@ private fun TripsScreenContent(
                         }
                     }
                 } else if (selectedTrip != null) {
-                    IconButton(onClick = onEditTrip) {
+                    IconButton(onClick = { onEditTrip(selectedTrip.id) }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Edit Trip")
                     }
                 }
@@ -195,6 +204,7 @@ private fun TripsScreenContent(
                 TripTransactionsContent(
                     trip = selectedTrip,
                     transactions = uiState.selectedTripTransactions,
+                    onEditTransaction = onEditTransaction
                 )
             } else {
                 TripListContent(
@@ -268,7 +278,8 @@ private fun TripsBottomBar(
 private fun TripTransactionsContent(
     trip: Trip,
     transactions: List<Transaction>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEditTransaction: (String) -> Unit
 ) {
     val totalAmount = transactions.sumOf { it.amount }
     val averageAmount = if (transactions.isNotEmpty()) totalAmount / transactions.size else 0.0
@@ -317,7 +328,11 @@ private fun TripTransactionsContent(
                     DateSeparator(date = date)
                 }
                 items(transactionsOnDate) { transaction ->
-                    TransactionListItem(transaction = transaction, currencySymbol = currencySymbol)
+                    TransactionListItem(
+                        transaction = transaction,
+                        currencySymbol = currencySymbol,
+                        onClick = { onEditTransaction(transaction.id) }
+                    )
                 }
             }
         }
@@ -369,9 +384,26 @@ private fun DateSeparator(date: LocalDate) {
 
 
 @Composable
-private fun TransactionListItem(transaction: Transaction, currencySymbol: String) {
+private fun TransactionListItem(
+    transaction: Transaction,
+    currencySymbol: String,
+    onClick: () -> Unit
+) {
     val notes = transaction.notes
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    val categoryName = transaction.category.name
+    
+    val categoryIcon = remember(categoryName) {
+        TransactionCategory.categories.find { it.title == categoryName }?.icon
+            ?: IncomeCategory.categories.find { it.title == categoryName }?.icon
+    }
+    
+    val categoryColor = getCategoryColor(categoryName)
+
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
         ListItem(
             headlineContent = {
                 Text(
@@ -388,11 +420,25 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
                 }
             },
             leadingContent = {
-                Icon(
-                    imageVector = Icons.Filled.ShoppingCart, // Placeholder
-                    contentDescription = transaction.category.name,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (categoryIcon != null) {
+                    Icon(
+                        imageVector = categoryIcon,
+                        contentDescription = transaction.category.name,
+                        tint = categoryColor
+                    )
+                } else if (transaction.category.iconRes != 0) {
+                    Icon(
+                        painter = painterResource(id = transaction.category.iconRes),
+                        contentDescription = transaction.category.name,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                     Icon(
+                        imageVector = Icons.Filled.ShoppingCart,
+                        contentDescription = transaction.category.name,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                     )
+                }
             },
             trailingContent = {
                 Text(
@@ -403,7 +449,7 @@ private fun TransactionListItem(transaction: Transaction, currencySymbol: String
                 )
             },
             colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = CardDefaults.elevatedCardColors().containerColor
             )
         )
     }
@@ -621,7 +667,7 @@ private fun TripsScreenPreview_TripSelected() {
         val uiState = TripsUiState(
             selectedTrip = sampleTrip,
             trips = listOf(sampleTrip),
-            transactionsByTrip = mapOf(sampleTrip.id to sampleTransactions)
+            selectedTripTransactions = sampleTransactions
         )
         TripsScreenContent(
             uiState = uiState,
@@ -637,7 +683,8 @@ private fun TripsScreenPreview_TripSelected() {
             onToggleTripSelection = {},
             onSelectAllTrips = {},
             onClearSelectedTrips = {},
-            onDeleteSelectedTrips = {}
+            onDeleteSelectedTrips = {},
+            onEditTransaction = {}
         )
     }
 }
@@ -668,7 +715,7 @@ private fun TripsScreenPreview_NoTripSelected() {
             uiState = TripsUiState(
                 selectedTrip = null,
                 trips = sampleTrips,
-                transactionsByTrip = emptyMap()
+                selectedTripTransactions = emptyList()
             ),
             setTopAppBar = {},
             onActivateAndSelectTrip = {},
@@ -682,7 +729,8 @@ private fun TripsScreenPreview_NoTripSelected() {
             onToggleTripSelection = {},
             onSelectAllTrips = {},
             onClearSelectedTrips = {},
-            onDeleteSelectedTrips = {}
+            onDeleteSelectedTrips = {},
+            onEditTransaction = {}
         )
     }
 }
@@ -729,7 +777,8 @@ private fun TripsScreenPreview_SelectionMode() {
             onToggleTripSelection = {},
             onSelectAllTrips = {},
             onClearSelectedTrips = {},
-            onDeleteSelectedTrips = {}
+            onDeleteSelectedTrips = {},
+            onEditTransaction = {}
         )
     }
 }
