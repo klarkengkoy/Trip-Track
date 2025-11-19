@@ -75,12 +75,4 @@ class MainViewModel @Inject constructor(
             )
         }
     }
-
-    /**
-     * Resets the TopAppBar to its default, empty state.
-     * Typically called when a screen is disposed.
-     */
-    fun resetTopAppBarState() {
-        _uiState.update { it.copy(topAppBarState = TopAppBarState()) }
-    }
 }

@@ -18,6 +18,7 @@ class UserDataStore(context: Context) {
     companion object {
         val USER_NAME_KEY = stringPreferencesKey("user_name")
         val USER_EMAIL_KEY = stringPreferencesKey("user_email")
+        val ACTIVE_TRIP_ID_KEY = stringPreferencesKey("active_trip_id")
     }
 
     suspend fun saveUser(name: String, email: String) {
@@ -28,12 +29,26 @@ class UserDataStore(context: Context) {
         }
     }
 
+    suspend fun setActiveTripId(tripId: String?) {
+        dataStore.edit { preferences ->
+            if (tripId != null) {
+                preferences[ACTIVE_TRIP_ID_KEY] = tripId
+            } else {
+                preferences.remove(ACTIVE_TRIP_ID_KEY)
+            }
+        }
+    }
+
     val userNameFlow: Flow<String?> = dataStore.data.map {
         it[USER_NAME_KEY]
     }
 
     val userEmailFlow: Flow<String?> = dataStore.data.map {
         it[USER_EMAIL_KEY]
+    }
+
+    val activeTripIdFlow: Flow<String?> = dataStore.data.map {
+        it[ACTIVE_TRIP_ID_KEY]
     }
 
     suspend fun clear() {

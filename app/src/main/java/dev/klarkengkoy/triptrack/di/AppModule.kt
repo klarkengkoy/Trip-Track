@@ -29,6 +29,45 @@ object AppModule {
         }
     }
 
+    private val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // We need to create a new table without the isActive column, copy data, and drop the old one
+            // because SQLite doesn't support DROP COLUMN in older versions, but Room handles this better
+            // by just creating a new table if we provide the spec.
+            // However, for simple column removal, we can just create a new table and copy.
+            
+            // Simpler approach: SQLite simply ignores extra columns if we don't query them,
+            // but to be clean, let's recreate the table.
+            
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS trips_new (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    currency TEXT NOT NULL,
+                    isCurrencyCustom INTEGER NOT NULL,
+                    imageUri TEXT,
+                    imageOffsetX REAL NOT NULL,
+                    imageOffsetY REAL NOT NULL,
+                    imageScale REAL NOT NULL,
+                    startDate INTEGER,
+                    endDate INTEGER,
+                    dailyBudget REAL,
+                    totalBudget REAL,
+                    isDeleted INTEGER NOT NULL,
+                    dateCreated INTEGER NOT NULL
+                )
+            """.trimIndent())
+
+            db.execSQL("""
+                INSERT INTO trips_new (id, name, currency, isCurrencyCustom, imageUri, imageOffsetX, imageOffsetY, imageScale, startDate, endDate, dailyBudget, totalBudget, isDeleted, dateCreated)
+                SELECT id, name, currency, isCurrencyCustom, imageUri, imageOffsetX, imageOffsetY, imageScale, startDate, endDate, dailyBudget, totalBudget, isDeleted, dateCreated FROM trips
+            """.trimIndent())
+
+            db.execSQL("DROP TABLE trips")
+            db.execSQL("ALTER TABLE trips_new RENAME TO trips")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideTripTrackDatabase(@ApplicationContext context: Context): TripTrackDatabase {
@@ -36,7 +75,7 @@ object AppModule {
             context,
             TripTrackDatabase::class.java,
             "triptrack_database"
-        ).addMigrations(MIGRATION_1_2)
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 

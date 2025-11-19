@@ -1,6 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,21 +8,21 @@ import dev.klarkengkoy.triptrack.data.repository.TripsRepository
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import javax.inject.Inject
 
-private const val TAG = "TripsViewModel"
-
 data class TripsUiState(
+    // Flag to indicate if the initial data has loaded, to prevent UI flicker
+    val isDataLoaded: Boolean = false,
     val selectedTrip: Trip? = null,
     val trips: List<Trip> = emptyList(),
     val transactionsByTrip: Map<String, List<Transaction>> = emptyMap(),
@@ -55,62 +54,109 @@ class TripsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TripsUiState())
-    val uiState: StateFlow<TripsUiState> = _uiState.asStateFlow()
+    // Private mutable states for UI-driven actions
+    private val _tripUiState = MutableStateFlow(TripUiState())
+    private val _selectionMode = MutableStateFlow(false)
+    private val _selectedTrips = MutableStateFlow<Set<String>>(emptySet())
+    private val _manualSelectedTripId = MutableStateFlow<String?>(null)
+
+    // The main public UI state, derived reactively from multiple flows
+    val uiState: StateFlow<TripsUiState> = combine(
+        combine(
+            tripsRepository.getTrips(),
+            tripsRepository.getActiveTrip(),
+            _manualSelectedTripId,
+            _tripUiState,
+            _selectionMode
+        ) { trips, activeTrip, manualSelectedId, tripUiState, selectionMode ->
+            object {
+                val trips = trips
+                val activeTrip = activeTrip
+                val manualSelectedId = manualSelectedId
+                val tripUiState = tripUiState
+                val selectionMode = selectionMode
+            }
+        },
+        _selectedTrips
+    ) { intermediate, selectedTrips ->
+        val finalSelectedTrip = if (intermediate.manualSelectedId != null) {
+            intermediate.trips.find { it.id == intermediate.manualSelectedId }
+        } else {
+            intermediate.activeTrip
+        }
+
+        TripsUiState(
+            isDataLoaded = true, // We only emit once all streams are ready
+            selectedTrip = finalSelectedTrip,
+            trips = intermediate.trips,
+            tripUiState = intermediate.tripUiState,
+            selectionMode = intermediate.selectionMode,
+            selectedTrips = selectedTrips
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = TripsUiState() // Initial state shows loading/empty
+    )
 
     init {
-        tripsRepository.getTrips()
-            .onEach { trips ->
-                _uiState.update { it.copy(trips = trips) }
-
-                // Check for a tripId from navigation
-                val tripId = savedStateHandle.get<String>("tripId")
-                if (tripId != null) {
-                    val trip = trips.find { it.id == tripId }
-                    if (trip != null) {
-                        selectTrip(trip)
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
+        // Handle incoming navigation arguments
+        val navTripId = savedStateHandle.get<String>("tripId")
+        if (navTripId != null) {
+            _manualSelectedTripId.value = navTripId
+        }
     }
 
     fun onTripClicked(tripId: String) {
         viewModelScope.launch {
+            // Set the trip as active in our DataStore
             tripsRepository.setActiveTrip(tripId, true)
+            // Clear any manual override so the active trip from DataStore becomes the source of truth
+            _manualSelectedTripId.value = null
         }
     }
 
     fun onTripDeactivated() {
         viewModelScope.launch {
-            val activeTrip = tripsRepository.getActiveTrip().first()
-            if (activeTrip != null) {
-                tripsRepository.setActiveTrip(activeTrip.id, false)
+            val tripToDeactivate = uiState.value.selectedTrip
+            if (tripToDeactivate != null) {
+                tripsRepository.setActiveTrip(tripToDeactivate.id, false)
             }
+            // Also clear manual selection when deactivating
+            _manualSelectedTripId.value = null
         }
+    }
+
+    fun unselectTrip() {
+        // This is called on "Back" press from Trip Details.
+        // It should clear the DataStore active trip.
+        onTripDeactivated()
+    }
+    
+    fun selectTrip(trip: Trip) {
+        // This is a more explicit selection, let's treat it as a manual override for the session.
+        _manualSelectedTripId.value = trip.id
     }
 
     fun populateTripDetails(tripId: String) {
         viewModelScope.launch {
             val trip = tripsRepository.getTrip(tripId)
             if (trip != null) {
-                Log.d(TAG, "Populating details for trip: $trip")
-                _uiState.update {
+                // When editing a trip, we manually select it and populate the form state
+                _manualSelectedTripId.value = tripId
+                _tripUiState.update {
                     it.copy(
-                        selectedTrip = trip, // Set the selected trip for context
-                        tripUiState = it.tripUiState.copy(
-                            tripName = trip.name,
-                            imageUri = trip.imageUri,
-                            imageOffsetX = trip.imageOffsetX,
-                            imageOffsetY = trip.imageOffsetY,
-                            imageScale = trip.imageScale,
-                            startDate = trip.startDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
-                            endDate = trip.endDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
-                            currency = trip.currency,
-                            isCurrencyCustom = trip.isCurrencyCustom,
-                            totalBudget = trip.totalBudget?.toBigDecimal()?.toPlainString() ?: "",
-                            dailyBudget = trip.dailyBudget?.toBigDecimal()?.toPlainString() ?: ""
-                        )
+                        tripName = trip.name,
+                        imageUri = trip.imageUri,
+                        imageOffsetX = trip.imageOffsetX,
+                        imageOffsetY = trip.imageOffsetY,
+                        imageScale = trip.imageScale,
+                        startDate = trip.startDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
+                        endDate = trip.endDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
+                        currency = trip.currency,
+                        isCurrencyCustom = trip.isCurrencyCustom,
+                        totalBudget = trip.totalBudget?.toBigDecimal()?.toPlainString() ?: "",
+                        dailyBudget = trip.dailyBudget?.toBigDecimal()?.toPlainString() ?: ""
                     )
                 }
             }
@@ -118,153 +164,97 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onTripNameChanged(newName: String) {
-        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(tripName = newName)) }
+        _tripUiState.update { it.copy(tripName = newName) }
     }
 
     fun onImageUriChanged(newImageUri: String?) {
-        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(imageUri = newImageUri)) }
+        _tripUiState.update { it.copy(imageUri = newImageUri) }
     }
 
     fun onImageOffsetChanged(x: Float, y: Float) {
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(
-                    imageOffsetX = x,
-                    imageOffsetY = y
-                )
-            )
-        }
+        _tripUiState.update { it.copy(imageOffsetX = x, imageOffsetY = y) }
     }
 
     fun onImageScaleChanged(scale: Float) {
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(imageScale = scale)
-            )
-        }
+        _tripUiState.update { it.copy(imageScale = scale) }
     }
 
     fun onDatesChanged(startDate: Long?, endDate: Long?) {
-        _uiState.update { currentState ->
-            var updatedAddTripState = currentState.tripUiState.copy(
-                startDate = startDate,
-                endDate = endDate
-            )
-
-            // After updating dates, try to recalculate budget
+        _tripUiState.update { currentState ->
+            var updatedState = currentState.copy(startDate = startDate, endDate = endDate)
             if (startDate != null && endDate != null) {
                 val start = Instant.ofEpochMilli(startDate).atZone(ZoneId.of("UTC")).toLocalDate()
                 val end = Instant.ofEpochMilli(endDate).atZone(ZoneId.of("UTC")).toLocalDate()
                 val days = ChronoUnit.DAYS.between(start, end) + 1
-
                 if (days > 0) {
-                    if (updatedAddTripState.totalBudget.isNotEmpty()) {
-                        // Recalculate daily budget from total budget
-                        updatedAddTripState = updatedAddTripState.copy(
-                            dailyBudget = String.format("%.2f", updatedAddTripState.totalBudget.toDouble() / days)
+                    if (updatedState.totalBudget.isNotEmpty()) {
+                        updatedState = updatedState.copy(
+                            dailyBudget = String.format(Locale.US, "%.2f", updatedState.totalBudget.toDouble() / days)
                         )
-                    } else if (updatedAddTripState.dailyBudget.isNotEmpty()) {
-                        // Recalculate total budget from daily budget
-                        updatedAddTripState = updatedAddTripState.copy(
-                            totalBudget = String.format("%.2f", updatedAddTripState.dailyBudget.toDouble() * days)
+                    } else if (updatedState.dailyBudget.isNotEmpty()) {
+                        updatedState = updatedState.copy(
+                            totalBudget = String.format(Locale.US, "%.2f", updatedState.dailyBudget.toDouble() * days)
                         )
                     }
                 }
             }
-            currentState.copy(tripUiState = updatedAddTripState)
+            updatedState
         }
-    }
-
-    @Deprecated("Use onCurrencySelected or onCustomCurrencyChanged instead")
-    fun onCurrencyChanged(newCurrency: String) {
-        _uiState.update { it.copy(tripUiState = it.tripUiState.copy(currency = newCurrency)) }
     }
 
     fun onCurrencySelected(newCurrency: String) {
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(
-                    currency = newCurrency,
-                    isCurrencyCustom = false
-                )
-            )
-        }
+        _tripUiState.update { it.copy(currency = newCurrency, isCurrencyCustom = false) }
     }
 
     fun onCustomCurrencyChanged(newCurrency: String) {
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(
-                    currency = newCurrency,
-                    isCurrencyCustom = true
-                )
-            )
-        }
+        _tripUiState.update { it.copy(currency = newCurrency, isCurrencyCustom = true) }
     }
 
     fun onTotalBudgetChanged(newBudget: String) {
-        val addTripUiState = _uiState.value.tripUiState
-
-        val dailyBudget = if (newBudget.isNotEmpty() && addTripUiState.startDate != null && addTripUiState.endDate != null) {
-            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
-            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
+        val currentState = _tripUiState.value
+        val dailyBudget = if (newBudget.isNotEmpty() && currentState.startDate != null && currentState.endDate != null) {
+            val start = Instant.ofEpochMilli(currentState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+            val end = Instant.ofEpochMilli(currentState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) String.format("%.2f", newBudget.toDouble() / days) else ""
+            if (days > 0) String.format(Locale.US, "%.2f", newBudget.toDouble() / days) else ""
         } else {
-            addTripUiState.dailyBudget // Keep existing daily budget if no dates
+            currentState.dailyBudget
         }
-
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(
-                    totalBudget = newBudget,
-                    dailyBudget = dailyBudget
-                )
-            )
-        }
+        _tripUiState.update { it.copy(totalBudget = newBudget, dailyBudget = dailyBudget) }
     }
 
     fun onDailyBudgetChanged(newBudget: String) {
-        val addTripUiState = _uiState.value.tripUiState
-
-        val totalBudget = if (newBudget.isNotEmpty() && addTripUiState.startDate != null && addTripUiState.endDate != null) {
-            val start = Instant.ofEpochMilli(addTripUiState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
-            val end = Instant.ofEpochMilli(addTripUiState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
+        val currentState = _tripUiState.value
+        val totalBudget = if (newBudget.isNotEmpty() && currentState.startDate != null && currentState.endDate != null) {
+            val start = Instant.ofEpochMilli(currentState.startDate).atZone(ZoneId.of("UTC")).toLocalDate()
+            val end = Instant.ofEpochMilli(currentState.endDate).atZone(ZoneId.of("UTC")).toLocalDate()
             val days = ChronoUnit.DAYS.between(start, end) + 1
-            if (days > 0) String.format("%.2f", newBudget.toDouble() * days) else ""
+            if (days > 0) String.format(Locale.US, "%.2f", newBudget.toDouble() * days) else ""
         } else {
-            addTripUiState.totalBudget // Keep existing total budget if no dates
+            currentState.totalBudget
         }
-
-        _uiState.update {
-            it.copy(
-                tripUiState = it.tripUiState.copy(
-                    totalBudget = totalBudget,
-                    dailyBudget = newBudget
-                )
-            )
-        }
+        _tripUiState.update { it.copy(totalBudget = totalBudget, dailyBudget = newBudget) }
     }
 
     fun resetAddTripState() {
-        _uiState.update { it.copy(tripUiState = TripUiState()) }
+        _tripUiState.value = TripUiState()
     }
 
     fun addTrip() {
         viewModelScope.launch {
-            val addTripState = _uiState.value.tripUiState
+            val state = _tripUiState.value
             val newTrip = Trip(
-                name = addTripState.tripName,
-                currency = addTripState.currency,
-                isCurrencyCustom = addTripState.isCurrencyCustom,
-                imageUri = addTripState.imageUri,
-                imageOffsetX = addTripState.imageOffsetX,
-                imageOffsetY = addTripState.imageOffsetY,
-                imageScale = addTripState.imageScale,
-                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                totalBudget = addTripState.totalBudget.toDoubleOrNull(),
-                dailyBudget = addTripState.dailyBudget.toDoubleOrNull()
+                name = state.tripName,
+                currency = state.currency,
+                isCurrencyCustom = state.isCurrencyCustom,
+                imageUri = state.imageUri,
+                imageOffsetX = state.imageOffsetX,
+                imageOffsetY = state.imageOffsetY,
+                imageScale = state.imageScale,
+                startDate = state.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                endDate = state.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                totalBudget = state.totalBudget.toDoubleOrNull(),
+                dailyBudget = state.dailyBudget.toDoubleOrNull()
             )
             tripsRepository.addTrip(newTrip)
             resetAddTripState()
@@ -273,69 +263,53 @@ class TripsViewModel @Inject constructor(
 
     fun updateTrip() {
         viewModelScope.launch {
-            val addTripState = _uiState.value.tripUiState
-            val updatedTrip = _uiState.value.selectedTrip!!.copy(
-                name = addTripState.tripName,
-                currency = addTripState.currency,
-                isCurrencyCustom = addTripState.isCurrencyCustom,
-                imageUri = addTripState.imageUri,
-                imageOffsetX = addTripState.imageOffsetX,
-                imageOffsetY = addTripState.imageOffsetY,
-                imageScale = addTripState.imageScale,
-                startDate = addTripState.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                endDate = addTripState.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
-                totalBudget = addTripState.totalBudget.toDoubleOrNull(),
-                dailyBudget = addTripState.dailyBudget.toDoubleOrNull()
+            val state = _tripUiState.value
+            val currentSelected = uiState.value.selectedTrip ?: return@launch
+            val updatedTrip = currentSelected.copy(
+                name = state.tripName,
+                currency = state.currency,
+                isCurrencyCustom = state.isCurrencyCustom,
+                imageUri = state.imageUri,
+                imageOffsetX = state.imageOffsetX,
+                imageOffsetY = state.imageOffsetY,
+                imageScale = state.imageScale,
+                startDate = state.startDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                endDate = state.endDate?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate() },
+                totalBudget = state.totalBudget.toDoubleOrNull(),
+                dailyBudget = state.dailyBudget.toDoubleOrNull()
             )
             tripsRepository.updateTrip(updatedTrip)
             resetAddTripState()
         }
     }
 
-    fun unselectTrip() {
-        _uiState.update { it.copy(selectedTrip = null) }
-    }
-
-    fun selectTrip(trip: Trip) {
-        _uiState.update { it.copy(selectedTrip = trip) }
-    }
-
     fun enterSelectionMode(tripId: String) {
-        _uiState.update {
-            it.copy(selectionMode = true, selectedTrips = it.selectedTrips + tripId)
-        }
+        _selectionMode.value = true
+        _selectedTrips.update { it + tripId }
     }
 
     fun exitSelectionMode() {
-        _uiState.update { it.copy(selectionMode = false, selectedTrips = emptySet()) }
+        _selectionMode.value = false
+        _selectedTrips.value = emptySet()
     }
 
     fun toggleTripSelection(tripId: String) {
-        _uiState.update { uiState ->
-            val selectedTrips = uiState.selectedTrips
-            val newSelectedTrips = if (selectedTrips.contains(tripId)) {
-                selectedTrips - tripId
-            } else {
-                selectedTrips + tripId
-            }
-            uiState.copy(selectedTrips = newSelectedTrips)
+        _selectedTrips.update {
+            if (it.contains(tripId)) it - tripId else it + tripId
         }
     }
 
     fun selectAllTrips() {
-        _uiState.update { uiState ->
-            val allTripIds = uiState.trips.map { it.id }.toSet()
-            uiState.copy(selectedTrips = allTripIds)
-        }
+        _selectedTrips.value = uiState.value.trips.map { it.id }.toSet()
     }
 
     fun clearSelectedTrips() {
-        _uiState.update { it.copy(selectedTrips = emptySet()) }
+        _selectedTrips.value = emptySet()
     }
 
     fun deleteSelectedTrips() {
         viewModelScope.launch {
-            tripsRepository.deleteTrips(_uiState.value.selectedTrips)
+            tripsRepository.deleteTrips(_selectedTrips.value)
             exitSelectionMode()
         }
     }

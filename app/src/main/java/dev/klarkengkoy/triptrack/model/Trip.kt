@@ -26,7 +26,6 @@ data class Trip(
     val endDate: LocalDate? = null,
     val dailyBudget: Double? = null,
     val totalBudget: Double? = null,
-    val isActive: Boolean = false,
     val isDeleted: Boolean = false,
     val dateCreated: LocalDate = LocalDate.now()
 ) {

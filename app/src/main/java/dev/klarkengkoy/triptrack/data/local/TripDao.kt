@@ -26,8 +26,8 @@ interface TripDao {
     @Query("SELECT * FROM trips WHERE id = :tripId")
     suspend fun getTripById(tripId: String): Trip?
 
-    @Query("SELECT * FROM trips WHERE isActive = 1 LIMIT 1")
-    fun getActiveTrip(): Flow<Trip?>
+    @Query("SELECT * FROM trips WHERE id = :tripId")
+    fun getTripFlowById(tripId: String): Flow<Trip?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: Transaction)

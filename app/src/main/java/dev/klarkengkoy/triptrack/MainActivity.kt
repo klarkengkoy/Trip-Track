@@ -2,7 +2,6 @@ package dev.klarkengkoy.triptrack
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,7 +14,6 @@ import androidx.navigation.compose.rememberNavController
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import dagger.hilt.android.AndroidEntryPoint
-import dev.klarkengkoy.triptrack.ui.MainViewModel
 import dev.klarkengkoy.triptrack.ui.TripTrackScreen
 import dev.klarkengkoy.triptrack.ui.login.LoginViewModel
 import dev.klarkengkoy.triptrack.ui.login.SignInEvent
@@ -25,12 +23,10 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 class MainActivity : ComponentActivity() {
 
     private val loginViewModel: LoginViewModel by viewModels()
-    private val mainViewModel: MainViewModel by viewModels()
 
     private val signInLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         FirebaseAuthUIActivityResultContract(),
     ) { res ->
-        Log.d(TAG, "Sign-in result received")
         loginViewModel.onSignInResult(res)
     }
 
@@ -75,7 +71,4 @@ class MainActivity : ComponentActivity() {
         signInLauncher.launch(signInIntent)
     }
 
-    companion object {
-        private const val TAG = "MainActivity"
-    }
 }

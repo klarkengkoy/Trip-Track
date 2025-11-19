@@ -5,13 +5,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
+import dev.klarkengkoy.triptrack.data.UserDataStore
 import dev.klarkengkoy.triptrack.data.local.TripDao
 import dev.klarkengkoy.triptrack.data.remote.FirebaseTransaction
 import dev.klarkengkoy.triptrack.data.remote.FirebaseTrip
 import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.Trip
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -20,7 +24,8 @@ private const val TAG = "TripsRepositoryImpl"
 class TripsRepositoryImpl @Inject constructor(
     private val tripDao: TripDao,
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val userDataStore: UserDataStore
 ) : TripsRepository {
 
     private val userTripsCollection: CollectionReference?
@@ -84,14 +89,20 @@ class TripsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setActiveTrip(tripId: String, isActive: Boolean) {
-        val trip = tripDao.getTripById(tripId)
-        if (trip != null) {
-            tripDao.insertTrip(trip.copy(isActive = isActive))
-        }
+        // If isActive is true, we set the ID. If false, we set null (or clear it).
+        val idToSave = if (isActive) tripId else null
+        userDataStore.setActiveTripId(idToSave)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getActiveTrip(): Flow<Trip?> {
-        return tripDao.getActiveTrip()
+        return userDataStore.activeTripIdFlow.flatMapLatest { tripId ->
+            if (tripId != null) {
+                tripDao.getTripFlowById(tripId)
+            } else {
+                flowOf(null)
+            }
+        }
     }
 
     private suspend fun syncDeletions(collection: CollectionReference) {
@@ -124,7 +135,8 @@ class TripsRepositoryImpl @Inject constructor(
     private suspend fun fetchRemoteTrips(collection: CollectionReference) {
         val remoteTrips = collection.get().await().toObjects<FirebaseTrip>()
         remoteTrips.forEach { firebaseTrip ->
-            tripDao.insertTrip(Trip.fromFirebaseTrip(firebaseTrip))
+            val newTrip = Trip.fromFirebaseTrip(firebaseTrip)
+            tripDao.insertTrip(newTrip)
         }
         Log.d(TAG, "Finished downloading remote trips. Local DB is now in sync.")
     }
