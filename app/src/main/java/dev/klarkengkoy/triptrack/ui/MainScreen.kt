@@ -17,6 +17,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -25,6 +26,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -51,6 +53,17 @@ fun TripTrackScreen(
     val isSignedIn by loginViewModel.isUserSignedIn.collectAsStateWithLifecycle()
     val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val activeTripUiState by mainViewModel.activeTripUiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(isSignedIn) {
+        if (!isSignedIn) {
+            navController.navigate("trips") {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
+    }
 
     if (isSignedIn) {
         MainScreen(
@@ -113,7 +126,6 @@ private fun MainScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            // Use a Box to prevent Scaffold from crashing in previews when the bar is hidden.
             Box {
                 AnimatedVisibility(
                     visible = shouldShowBottomNav,
@@ -129,7 +141,6 @@ private fun MainScreen(
         }
     ) { innerPadding ->
         if (isPreview) {
-            // In preview, show a mock list instead of the complex NavHost
             Column(
                 modifier = Modifier
                     .fillMaxSize()

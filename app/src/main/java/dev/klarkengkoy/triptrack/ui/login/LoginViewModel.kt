@@ -15,18 +15,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.data.UserDataStore
+import dev.klarkengkoy.triptrack.data.repository.AuthRepository
 import dev.klarkengkoy.triptrack.data.repository.TripsRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,7 +39,9 @@ sealed class SignInEvent {
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val userDataStore: UserDataStore,
-    private val tripsRepository: TripsRepository
+    private val tripsRepository: TripsRepository,
+    private val authRepository: AuthRepository,
+    private val signInProviderFactory: SignInProviderFactory
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -48,31 +50,22 @@ class LoginViewModel @Inject constructor(
     private val _signInEvent = MutableSharedFlow<SignInEvent>()
     val signInEvent = _signInEvent.asSharedFlow()
 
-    private val _isUserSignedIn = MutableStateFlow(Firebase.auth.currentUser != null)
-    val isUserSignedIn: StateFlow<Boolean> = _isUserSignedIn.asStateFlow()
-
-    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-        _isUserSignedIn.value = firebaseAuth.currentUser != null
-        _isLoading.value = false // Stop loading when auth state changes
-    }
+    val isUserSignedIn: StateFlow<Boolean> = authRepository.isUserSignedIn
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     init {
-        Log.d(TAG, "LoginViewModel initialized")
-        Firebase.auth.addAuthStateListener(authStateListener)
-
         viewModelScope.launch {
             isUserSignedIn.collect { isSignedIn ->
+                _isLoading.value = false
                 if (isSignedIn) {
-                    Log.d(TAG, "User is signed in, triggering trip sync.")
                     tripsRepository.syncTrips()
                 }
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Firebase.auth.removeAuthStateListener(authStateListener)
     }
 
     val signInProviders = listOf(
@@ -116,37 +109,27 @@ class LoginViewModel @Inject constructor(
     )
 
     fun onSignInRequested(signInType: SignInType) {
-        Log.d(TAG, "onSignInRequested for type: $signInType")
-        val provider = when (signInType) {
-            SignInType.GOOGLE -> AuthUI.IdpConfig.GoogleBuilder().build()
-            SignInType.FACEBOOK -> AuthUI.IdpConfig.FacebookBuilder().build()
-            SignInType.X -> AuthUI.IdpConfig.TwitterBuilder().build()
-            SignInType.EMAIL -> AuthUI.IdpConfig.EmailBuilder().build()
-            SignInType.PHONE -> AuthUI.IdpConfig.PhoneBuilder().build()
-            SignInType.ANONYMOUS -> AuthUI.IdpConfig.AnonymousBuilder().build()
-        }
+        val provider = signInProviderFactory.create(signInType)
         viewModelScope.launch {
-            Log.d(TAG, "Emitting Launch event to UI")
             _isLoading.value = true
             _signInEvent.emit(SignInEvent.Launch(listOf(provider)))
         }
     }
 
     fun onSignInResult(result: FirebaseAuthUIAuthenticationResult) {
-        Log.d(TAG, "onSignInResult received with code: ${result.resultCode}")
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             viewModelScope.launch {
-                val user = Firebase.auth.currentUser
-                if (user != null) {
-                    userDataStore.saveUser(user.displayName ?: "", user.email ?: "")
+                val name = authRepository.getUserName()
+                val email = authRepository.getUserEmail()
+                if (name != null && email != null) {
+                    userDataStore.saveUser(name, email)
                 }
-                val message = if (user?.displayName != null) "Welcome, ${user.displayName}" else "Sign-in successful"
+                val message = if (name != null) "Welcome, $name" else "Sign-in successful"
                 _signInEvent.emit(SignInEvent.Success(message))
             }
         } else {
-            Log.w(TAG, "Sign-in failed or was canceled by user.")
             viewModelScope.launch {
-                Log.d(TAG, "Emitting Error event to UI")
+                _isLoading.value = false
                 _signInEvent.emit(SignInEvent.Error("Sign-in failed"))
             }
         }
