@@ -2,6 +2,8 @@ package dev.klarkengkoy.triptrack.data
 
 import androidx.room.TypeConverter
 import com.google.firebase.Timestamp
+import dev.klarkengkoy.triptrack.data.remote.FirebaseTransaction
+import dev.klarkengkoy.triptrack.model.Transaction
 import dev.klarkengkoy.triptrack.model.TransactionType
 import java.time.Instant
 import java.time.LocalDate
@@ -35,6 +37,27 @@ class Converters {
 
     fun toFirebaseTimestamp(date: LocalDate?): Timestamp? {
         return date?.let { Timestamp(it.atStartOfDay(ZoneId.systemDefault()).toInstant().epochSecond, 0) }
+    }
+
+    fun fromFirebaseTransaction(firebaseTransaction: FirebaseTransaction): Transaction? {
+        val date = fromFirebaseTimestamp(firebaseTransaction.date)
+        return if (date != null) {
+            Transaction(
+                id = firebaseTransaction.id,
+                tripId = firebaseTransaction.tripId,
+                notes = firebaseTransaction.notes,
+                amount = firebaseTransaction.amount,
+                date = date,
+                category = firebaseTransaction.category,
+                paymentMethod = firebaseTransaction.paymentMethod,
+                location = firebaseTransaction.location,
+                imageUri = firebaseTransaction.imageUri,
+                excludeFromBudget = firebaseTransaction.excludeFromBudget,
+                type = TransactionType.valueOf(firebaseTransaction.type)
+            )
+        } else {
+            null
+        }
     }
     // endregion
 }

@@ -51,7 +51,6 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 fun TripTrackScreen(
     loginViewModel: LoginViewModel,
     snackbarHostState: SnackbarHostState,
-    navController: NavHostController,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val isSignedIn by loginViewModel.isUserSignedIn.collectAsStateWithLifecycle()
@@ -60,6 +59,7 @@ fun TripTrackScreen(
 
     when (isSignedIn) {
         true -> {
+            val navController = rememberNavController()
             MainScreen(
                 snackbarHostState = snackbarHostState,
                 navController = navController,

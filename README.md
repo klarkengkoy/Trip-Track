@@ -81,4 +81,4 @@ It leverages modern Android development tools and best practices to deliver a ro
 ---
 
 ## 📱 Status
-🚧 **Currently in active development** — polishing UI state management and preparing for Google Maps and Retrofit integration.
+🚧 **Currently in active development** — Polishing UI state management, and actively migrating to **Navigation 3** for type-safe routing.

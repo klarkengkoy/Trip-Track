@@ -5,6 +5,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObjects
 import dev.klarkengkoy.triptrack.data.UserDataStore
+import dev.klarkengkoy.triptrack.data.Converters
 import dev.klarkengkoy.triptrack.data.local.TripDao
 import dev.klarkengkoy.triptrack.data.remote.FirebaseTransaction
 import dev.klarkengkoy.triptrack.data.remote.FirebaseTrip
@@ -130,6 +131,16 @@ class TripsRepositoryImpl @Inject constructor(
         remoteTrips.forEach { firebaseTrip ->
             val newTrip = Trip.fromFirebaseTrip(firebaseTrip)
             tripDao.insertTrip(newTrip)
+
+            // Fetch transactions for this trip
+            val transactionsCollection = getTripTransactionsCollection(newTrip.id)
+            val remoteTransactions = transactionsCollection?.get()?.await()?.toObjects<FirebaseTransaction>()
+            remoteTransactions?.forEach { firebaseTransaction ->
+                val newTransaction = Converters().fromFirebaseTransaction(firebaseTransaction)
+                if (newTransaction != null) {
+                     tripDao.insertTransaction(newTransaction)
+                }
+            }
         }
     }
 }

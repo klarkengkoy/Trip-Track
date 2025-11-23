@@ -10,7 +10,6 @@ import androidx.activity.viewModels
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.navigation.compose.rememberNavController
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,7 +36,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             TripTrackTheme {
                 val snackbarHostState = remember { SnackbarHostState() }
-                val navController = rememberNavController()
 
                 LaunchedEffect(Unit) {
                     loginViewModel.signInEvent.collect { event ->
@@ -57,7 +55,6 @@ class MainActivity : ComponentActivity() {
                 TripTrackScreen(
                     loginViewModel = loginViewModel,
                     snackbarHostState = snackbarHostState,
-                    navController = navController
                 )
             }
         }
