@@ -15,19 +15,25 @@ enum class TransactionType {
 }
 
 data class Coordinates(
-    val latitude: Double,
-    val longitude: Double
-)
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
+) {
+    constructor() : this(0.0, 0.0)
+}
 
 data class Category(
-    val name: String,
-    @field:DrawableRes val iconRes: Int
-)
+    val name: String = "",
+    @field:DrawableRes val iconRes: Int = 0
+) {
+    constructor() : this("", 0)
+}
 
 data class PaymentMethod(
-    val name: String,
-    @field:DrawableRes val iconRes: Int
-)
+    val name: String = "",
+    @field:DrawableRes val iconRes: Int = 0
+) {
+    constructor() : this("", 0)
+}
 
 @Entity(tableName = "transactions")
 @TypeConverters(Converters::class)
