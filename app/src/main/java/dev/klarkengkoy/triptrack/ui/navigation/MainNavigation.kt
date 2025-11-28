@@ -1,29 +1,24 @@
 package dev.klarkengkoy.triptrack.ui.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import androidx.navigation.navigation
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.TopAppBarState
 import dev.klarkengkoy.triptrack.ui.dashboard.DashboardScreen
@@ -42,702 +37,394 @@ import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripNameScreen
 import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripPhotoScreen
 import dev.klarkengkoy.triptrack.ui.trips.tripdetails.TripSummaryScreen
 
-const val ADD_TRIP_ROUTE = "addTrip"
-const val EDIT_TRIP_ROUTE = "editTrip"
-const val ADD_TRANSACTION_ROUTE = "addTransaction"
-const val EDIT_TRANSACTION_ROUTE = "editTransaction"
-
-private const val ANIMATION_DURATION = 700
-
-private fun slideIn(
-    direction: AnimatedContentTransitionScope.SlideDirection
-): AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    slideIntoContainer(direction, animationSpec = tween(ANIMATION_DURATION))
-}
-
-private fun slideOut(
-    direction: AnimatedContentTransitionScope.SlideDirection
-): AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    slideOutOfContainer(direction, animationSpec = tween(ANIMATION_DURATION))
-}
-
-private val slideInFromLeft = slideIn(AnimatedContentTransitionScope.SlideDirection.Left)
-private val slideOutToLeft = slideOut(AnimatedContentTransitionScope.SlideDirection.Left)
-private val slideInFromRight = slideIn(AnimatedContentTransitionScope.SlideDirection.Right)
-private val slideOutToRight = slideOut(AnimatedContentTransitionScope.SlideDirection.Right)
-private val slideInFromUp = slideIn(AnimatedContentTransitionScope.SlideDirection.Up)
-private val slideOutToDown = slideOut(AnimatedContentTransitionScope.SlideDirection.Down)
-private val slideInFromDown = slideIn(AnimatedContentTransitionScope.SlideDirection.Down)
-private val slideOutToUp = slideOut(AnimatedContentTransitionScope.SlideDirection.Up)
-
-private val fadeInAnim: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-    fadeIn(animationSpec = tween(ANIMATION_DURATION))
-}
-
-private val fadeOutAnim: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
-    fadeOut(animationSpec = tween(ANIMATION_DURATION))
-}
-
 @Composable
 fun MainNavigation(
-    navController: NavHostController,
+    navigationState: NavigationState,
+    navigator: Navigator,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     setTopAppBar: (TopAppBarState) -> Unit
 ) {
-    NavHost(navController, startDestination = "trips", modifier = modifier) {
-        tripsGraph(navController, setTopAppBar)
-        dashboardGraph()
-        mediaGraph()
-        mapsGraph()
-        settingsGraph(setTopAppBar)
-    }
-}
+    val backStack = navigationState.backStacks[navigationState.topLevelRoute]
+        ?: remember { mutableStateListOf() }
 
-private fun NavGraphBuilder.tripsGraph(
-    navController: NavHostController,
-    setTopAppBar: (TopAppBarState) -> Unit
-) {
-    composable(
-        route = "trips?tripId={tripId}",
-        arguments = listOf(navArgument("tripId") { nullable = true })
-    ) {
-        TripsScreen(
-            setTopAppBar = setTopAppBar,
-            onAddTrip = { navController.navigate(ADD_TRIP_ROUTE) },
-            onAddTransaction = { tripId -> navController.navigate("$ADD_TRANSACTION_ROUTE/$tripId") },
-            onEditTrip = { tripId -> navController.navigate("$EDIT_TRIP_ROUTE/$tripId") },
-            onEditTransaction = { transactionId -> navController.navigate("$EDIT_TRANSACTION_ROUTE/$transactionId") }
-        )
-    }
-
-    addTransactionGraph(navController, setTopAppBar)
-    editTransactionGraph(navController, setTopAppBar)
-    addTripGraph(navController, setTopAppBar)
-    editTripGraph(navController, setTopAppBar)
-}
-
-private fun NavGraphBuilder.addTransactionGraph(
-    navController: NavHostController,
-    setTopAppBar: (TopAppBarState) -> Unit
-) {
-    navigation(startDestination = "addTransactionCategory", route = "$ADD_TRANSACTION_ROUTE/{tripId}") {
-        composable("addTransactionCategory") { backStackEntry ->
-            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
-
-            LaunchedEffect(Unit) {
-                setTopAppBar(TopAppBarState(
-                    title = { Text("Select a Category") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
-                        }
-                    }
-                ))
-            }
-
-            CategoryScreen(onCategorySelected = { category ->
-                navController.navigate("addTransactionDetails/$tripId/$category")
-            })
-        }
-
-        composable("addTransactionDetails/{tripId}/{category}") { 
-            val tripId = it.arguments?.getString("tripId") ?: ""
-            LaunchedEffect(Unit) {
-                setTopAppBar(TopAppBarState(
-                    title = { Text("Add Transaction") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
-                        }
-                    }
-                ))
-            }
-            TransactionScreen(
-                onSave = {
-                    navController.navigate("trips") {
-                        popUpTo("$ADD_TRANSACTION_ROUTE/{tripId}") { inclusive = true }
-                    }
-                },
-                onCategoryClick = {
-                    navController.navigate("addTransactionCategory") {
-                         popUpTo("addTransactionDetails/$tripId/{category}") { inclusive = true }
-                    }
-                }
+    val entryProvider = entryProvider {
+        // --- Main Tabs ---
+        entry<Trips> { key ->
+            TripsScreen(
+                contentPadding = contentPadding,
+                setTopAppBar = setTopAppBar,
+                onAddTrip = { navigator.navigate(AddTripName) },
+                onAddTransaction = { tripId -> navigator.navigate(AddTransactionCategory(tripId)) },
+                onEditTrip = { tripId -> navigator.navigate(EditTripName(tripId)) },
+                onEditTransaction = { transactionId -> navigator.navigate(EditTransactionDetails(transactionId)) }
             )
         }
-    }
-}
+        entry<Dashboard> { DashboardScreen() }
+        entry<Media> { MediaScreen() }
+        entry<Maps> { MapsScreen() }
+        entry<Settings> { SettingsScreen(setTopAppBar = setTopAppBar) }
 
-// Placeholder for Edit Transaction Graph - needs full implementation details similar to Add
-private fun NavGraphBuilder.editTransactionGraph(
-    navController: NavHostController,
-    setTopAppBar: (TopAppBarState) -> Unit
-) {
-     // Basic placeholder to resolve compilation error for now. 
-     // You will need to implement fetching the existing transaction and pre-filling the TransactionScreen.
-     navigation(startDestination = "editTransactionDetails", route = "$EDIT_TRANSACTION_ROUTE/{transactionId}") {
-         composable("editTransactionDetails") { backStackEntry ->
-             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
-             
-             LaunchedEffect(Unit) {
-                 setTopAppBar(TopAppBarState(
-                     title = { Text("Edit Transaction") },
-                     navigationIcon = {
-                         IconButton(onClick = { navController.navigateUp() }) {
-                             Icon(
-                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                 contentDescription = stringResource(R.string.cd_navigate_up)
-                             )
-                         }
-                     }
-                 ))
-             }
-             
-             TransactionScreen(
-                 onSave = { navController.navigateUp() },
-                 onCategoryClick = { 
-                     navController.navigate("editTransactionCategory/$transactionId") 
-                 }
-             )
-         }
-         
-         composable("editTransactionCategory/{transactionId}") { backStackEntry ->
-            val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
-
-            LaunchedEffect(Unit) {
-                setTopAppBar(TopAppBarState(
-                    title = { Text("Select a Category") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
-                        }
-                    }
-                ))
-            }
-
-            CategoryScreen(onCategorySelected = { category ->
-                // We navigate back to details, passing the NEW category as an argument.
-                // NOTE: This requires TransactionViewModel to look for this argument when recomposing or re-initializing?
-                // Or better, we just navigate back and let the ViewModel pick it up from the savedStateHandle if we passed it back.
-                // A simpler approach for now: Navigate to a route that looks like the details route but with category param,
-                // similar to Add flow. However, editTransactionDetails currently only takes {transactionId}.
-                // We should probably update the editTransactionDetails route to optionally take a category override, 
-                // or update the ViewModel to listen to a result. 
-                
-                // For simplicity and consistency with ADD flow, let's route back to the details screen
-                // but we need a way to tell the ViewModel "Hey, use this new category".
-                // The Add flow works because the route IS "addTransactionDetails/{tripId}/{category}".
-                // Let's make the Edit flow work similarly if possible, or pass it back via SavedStateHandle.
-                
-                navController.previousBackStackEntry?.savedStateHandle?.set("category", category)
-                navController.popBackStack()
-            })
-        }
-     }
-}
-
-private fun NavGraphBuilder.addTripGraph(
-    navController: NavHostController,
-    setTopAppBar: (TopAppBarState) -> Unit
-) {
-    navigation(startDestination = "addTripName", route = ADD_TRIP_ROUTE) {
-        composable(
-            "addTripName",
-            enterTransition = slideInFromUp,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToDown
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        // --- Add Trip Wizard ---
+        entry<AddTripName> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripNameScreen(
-                onNavigateNext = { navController.navigate("addTripCurrency") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(AddTripCurrency) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripCurrency",
-            enterTransition = slideInFromLeft,
-            exitTransition = {
-                when (targetState.destination.route) {
-                    "addCurrencyList" -> fadeOutAnim()
-                    else -> slideOutToLeft()
-                }
-            },
-            popEnterTransition = {
-                when (initialState.destination.route) {
-                    "addCurrencyList" -> fadeInAnim()
-                    else -> slideInFromRight()
-                }
-            },
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<AddTripCurrency> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripCurrencyScreen(
-                onNavigateNext = { navController.navigate("addTripDates") },
-                onCurrencyClick = { navController.navigate("addCurrencyList") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(AddTripDates) },
+                onCurrencyClick = { navigator.navigate(CurrencyList) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripDates",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<AddTripDates> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
-                    title = { Text("Edit Trip") },
+                    title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripDatesScreen(
-                onNavigateNext = { navController.navigate("addTripBudget") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(AddTripBudget) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripBudget",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<AddTripBudget> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripBudgetScreen(
-                onNavigateNext = { navController.navigate("addTripPhoto") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(AddTripPhoto) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripPhoto",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<AddTripPhoto> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripPhotoScreen(
-                onNavigateNext = { navController.navigate("addTripSummary") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(AddTripSummary) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripSummary",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<AddTripSummary> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Add Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripSummaryScreen(
+                contentPadding = contentPadding,
                 onSaveTrip = {
                     viewModel.addTrip()
-                    navController.navigate("trips") {
-                        popUpTo(ADD_TRIP_ROUTE) { inclusive = true }
-                    }
+                    navigator.backToRoot()
                 },
                 onDiscard = {
                     viewModel.resetAddTripState()
-                    navController.navigate("trips") {
-                        popUpTo(ADD_TRIP_ROUTE) { inclusive = true }
-                    }
+                    navigator.backToRoot()
                 },
                 viewModel = viewModel,
                 saveButtonText = "Save Trip"
             )
         }
-        composable(
-            "addCurrencyList",
-            enterTransition = slideInFromDown,
-            popExitTransition = slideOutToUp
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry(ADD_TRIP_ROUTE) }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
-            LaunchedEffect(Unit) {
-                setTopAppBar(TopAppBarState(
-                    title = { Text("Select Currency") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
-                        }
-                    }
-                ))
-            }
-
-            CurrencyListScreen(
-                onCurrencySelected = {
-                    viewModel.onCurrencySelected(it)
-                    navController.navigateUp()
-                }
-            )
-        }
-    }
-}
-
-private fun NavGraphBuilder.editTripGraph(
-    navController: NavHostController,
-    setTopAppBar: (TopAppBarState) -> Unit
-) {
-    navigation(startDestination = "editTripName", route = "$EDIT_TRIP_ROUTE/{tripId}") {
-        composable(
-            "editTripName",
-            enterTransition = slideInFromUp,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToDown
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
+        // --- Edit Trip Wizard ---
+        entry<EditTripName> { key ->
+            val viewModel: TripsViewModel = hiltViewModel()
+            val tripId = key.tripId
 
             LaunchedEffect(tripId) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
-
                 if (tripId.isNotEmpty()) {
                     viewModel.populateTripDetails(tripId)
                 }
             }
-
             TripNameScreen(
-                onNavigateNext = { navController.navigate("editTripCurrency") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(EditTripCurrency) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "editTripCurrency",
-            enterTransition = slideInFromLeft,
-            exitTransition = {
-                when (targetState.destination.route) {
-                    "editCurrencyList" -> fadeOutAnim()
-                    else -> slideOutToLeft()
-                }
-            },
-            popEnterTransition = {
-                when (initialState.destination.route) {
-                    "editCurrencyList" -> fadeInAnim()
-                    else -> slideInFromRight()
-                }
-            },
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<EditTripCurrency> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripCurrencyScreen(
-                onNavigateNext = { navController.navigate("editTripDates") },
-                onCurrencyClick = { navController.navigate("editCurrencyList") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(EditTripDates) },
+                onCurrencyClick = { navigator.navigate(CurrencyList) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "editTripDates",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<EditTripDates> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripDatesScreen(
-                onNavigateNext = { navController.navigate("editTripBudget") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(EditTripBudget) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "editTripBudget",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<EditTripBudget> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
-                    title = { Text("Add Trip") },
+                    title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripBudgetScreen(
-                onNavigateNext = { navController.navigate("addTripPhoto") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(EditTripPhoto) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "addTripPhoto",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<EditTripPhoto> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripPhotoScreen(
-                onNavigateNext = { navController.navigate("editTripSummary") },
+                contentPadding = contentPadding,
+                onNavigateNext = { navigator.navigate(EditTripSummary) },
                 viewModel = viewModel
             )
         }
-        composable(
-            "editTripSummary",
-            enterTransition = slideInFromLeft,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromRight,
-            popExitTransition = slideOutToRight
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
-
+        entry<EditTripSummary> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Edit Trip") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             TripSummaryScreen(
+                contentPadding = contentPadding,
                 onSaveTrip = {
                     viewModel.updateTrip()
-                    navController.navigate("trips") {
-                        popUpTo("$EDIT_TRIP_ROUTE/{tripId}") { inclusive = true }
-                    }
+                    navigator.backToRoot()
                 },
                 onDiscard = {
                     viewModel.resetAddTripState()
-                    navController.navigate("trips") {
-                        popUpTo("$EDIT_TRIP_ROUTE/{tripId}") { inclusive = true }
-                    }
+                    navigator.backToRoot()
                 },
                 viewModel = viewModel,
                 saveButtonText = "Update Trip"
             )
         }
-        composable(
-            "editCurrencyList",
-            enterTransition = slideInFromDown,
-            popExitTransition = slideOutToUp
-        ) { entry ->
-            val backStackEntry = remember(entry) { navController.getBackStackEntry("$EDIT_TRIP_ROUTE/{tripId}") }
-            val viewModel: TripsViewModel = hiltViewModel(backStackEntry)
 
+        // --- Shared ---
+        entry<CurrencyList> {
+            val viewModel: TripsViewModel = hiltViewModel()
             LaunchedEffect(Unit) {
                 setTopAppBar(TopAppBarState(
                     title = { Text("Select Currency") },
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
-                            )
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
                         }
                     }
                 ))
             }
-
             CurrencyListScreen(
                 onCurrencySelected = {
                     viewModel.onCurrencySelected(it)
-                    navController.navigateUp()
+                    navigator.goBack()
                 }
             )
         }
-    }
-}
 
-private fun NavGraphBuilder.dashboardGraph() {
-    composable("dashboard") {
-        DashboardScreen()
+        // --- Transactions ---
+        entry<AddTransactionCategory> { key ->
+            // This entry point carries the tripId context
+            val tripId = key.tripId
+            LaunchedEffect(Unit) {
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Select a Category") },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
+                        }
+                    }
+                ))
+            }
+            CategoryScreen(
+                contentPadding = contentPadding,
+                onCategorySelected = { category ->
+                navigator.navigate(AddTransactionDetails(tripId, category))
+            })
+        }
+        entry<AddTransactionDetails> { key ->
+            // key contains tripId and category
+            LaunchedEffect(Unit) {
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Add Transaction") },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
+                        }
+                    }
+                ))
+            }
+            TransactionScreen(
+                tripId = key.tripId,
+                category = key.category,
+                contentPadding = contentPadding,
+                onSave = {
+                    navigator.goBack() // Pop details
+                    navigator.goBack() // Pop category selection
+                },
+                onCategoryClick = {
+                    navigator.goBack() // Go back to category selection
+                }
+            )
+        }
+        entry<EditTransactionDetails> { key ->
+            val transactionId = key.transactionId
+            LaunchedEffect(Unit) {
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Edit Transaction") },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
+                        }
+                    }
+                ))
+            }
+            TransactionScreen(
+                transactionId = transactionId,
+                contentPadding = contentPadding,
+                onSave = { navigator.goBack() },
+                onCategoryClick = {
+                    navigator.navigate(EditTransactionCategory(transactionId))
+                }
+            )
+        }
+        entry<EditTransactionCategory> { key ->
+            // val transactionId = key.transactionId
+            LaunchedEffect(Unit) {
+                setTopAppBar(TopAppBarState(
+                    title = { Text("Select a Category") },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.goBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_navigate_up))
+                        }
+                    }
+                ))
+            }
+            CategoryScreen(
+                contentPadding = contentPadding,
+                onCategorySelected = { category ->
+                // Nav 2 approach was passing back via SavedStateHandle.
+                // In Nav 3, we might need a result mechanism or shared state.
+                // For now, mimic "pop" behavior.
+                // Ideally, we update ViewModel state here directly since we have transactionId?
+                // Or standard pop.
+                navigator.goBack()
+            })
+        }
     }
-}
 
-private fun NavGraphBuilder.mediaGraph() {
-    composable("media") {
-        MediaScreen()
-    }
-}
-
-private fun NavGraphBuilder.mapsGraph() {
-    composable("maps") {
-        MapsScreen()
-    }
-}
-
-private fun NavGraphBuilder.settingsGraph(setTopAppBar: (TopAppBarState) -> Unit) {
-    composable("settings") {
-        SettingsScreen(setTopAppBar = setTopAppBar)
+    Surface(modifier = modifier.background(Color.Red)) {
+        NavDisplay(
+            backStack = backStack,
+            entryProvider = entryProvider,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }

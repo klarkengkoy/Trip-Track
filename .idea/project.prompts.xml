@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PromptTemplates">
+    <option name="builtInPromptOverrides">
+      <list>
+        <BuiltInPromptOverride>
+          <option name="groupId" value="rules" />
+          <option name="promptId" value="project" />
+          <option name="text" value="Tech Stack &amp; Architecture:&#10;&#10;Pattern: Strict MVVM. Immutable state (val). Coroutines in viewModelScope.&#10;DI: Hilt (constructor injection).&#10;UI: 100% Jetpack Compose (Material 3 Expressive).&#10;Data: Repository pattern is the single source of truth.&#10;Gradle: Use libs.versions.toml. Never downgrade versions.&#10;&#10;Navigation 3 Standards:&#10;Framework: androidx.navigation3. Do NOT use legacy NavHost or string routes.&#10;Components: Use entryProvider, entry&lt;T&gt;, and NavDisplay.&#10;State: Manage backstack via NavigationState and Navigator.&#10;Pattern: Route objects must be type-safe classes/data classes.&#10;&#10;Compose Implementation Standards:&#10;Screen Structure: Split into Stateful (receives hiltViewModel, collects state) and Stateless (pure data/lambdas).&#10;Previews: Mandatory @Preview for Stateless composables.&#10;&#10;Workflow Constraints:&#10;Safety: ALWAYS read the file to get the latest context before generating code.&#10;Process:&#10;Think briefly about the implementation.&#10;Outline the plan.&#10;Generate the code." />
+        </BuiltInPromptOverride>
+      </list>
+    </option>
+    <option name="prompts">
+      <list>
+        <PromptTemplate>
+          <option name="enabled" value="true" />
+          <option name="name" value="Initial Prompt" />
+          <option name="text" value="Hi Gemini. Resetting context for 'Trip Track'.&#10;&#10;To sync with the current app structure, please read all files located in the 'ui/navigation' package (including 'MainNavigation.kt' and any state/route files).&#10;&#10;Confirm once read and await my next command.&#10;" />
+        </PromptTemplate>
+      </list>
+    </option>
+  </component>
+</project>

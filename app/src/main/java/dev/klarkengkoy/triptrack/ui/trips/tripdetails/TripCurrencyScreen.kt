@@ -3,6 +3,7 @@ package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +35,7 @@ import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 @Composable
 fun TripCurrencyScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onNavigateNext: () -> Unit = {},
     onCurrencyClick: () -> Unit = {},
     viewModel: TripsViewModel
@@ -42,6 +44,7 @@ fun TripCurrencyScreen(
 
     TripCurrencyContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         tripUiState = uiState.tripUiState,
         onCurrencyClick = onCurrencyClick,
         onNextClicked = onNavigateNext,
@@ -52,6 +55,7 @@ fun TripCurrencyScreen(
 @Composable
 private fun TripCurrencyContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     tripUiState: TripUiState,
     onCurrencyClick: () -> Unit,
     onNextClicked: () -> Unit,
@@ -63,7 +67,12 @@ private fun TripCurrencyContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -88,11 +97,14 @@ private fun TripCurrencyContent(
                     ),
                     headlineContent = { Text("Currency", style = MaterialTheme.typography.bodyLarge) },
                     trailingContent = {
+                        // Logic Change: If isCurrencyCustom is TRUE, we show "Select" here (clearing this field essentially).
+                        // If isCurrencyCustom is FALSE and currency is populated, we show the currency.
                         val currencyText = if (tripUiState.isCurrencyCustom || tripUiState.currency.isBlank()) {
                             "Select"
                         } else {
                             tripUiState.currency
                         }
+                        
                         Text(
                             text = currencyText, 
                             style = MaterialTheme.typography.bodyLarge, 
@@ -130,6 +142,7 @@ private fun TripCurrencyContent(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
+                // Logic Change: Only show the custom currency value if isCurrencyCustom is TRUE
                 val customCurrency = if (tripUiState.isCurrencyCustom) tripUiState.currency else ""
                 // TODO(klarkengkoy): Inside ui>tripdetails>tripcurrencyscreen, we will also put some validations like what we did here in Transaction amount.
                 BasicTextField(
@@ -169,7 +182,12 @@ private fun TripCurrencyContent(
             enabled = tripUiState.currency.isNotEmpty(),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .align(Alignment.BottomCenter)
         ) {
             Text("Next")

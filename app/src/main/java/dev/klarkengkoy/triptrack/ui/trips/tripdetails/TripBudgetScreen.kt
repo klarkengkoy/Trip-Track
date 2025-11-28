@@ -2,6 +2,7 @@ package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,7 @@ import java.util.Currency
 @Composable
 fun TripBudgetScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
@@ -47,6 +49,7 @@ fun TripBudgetScreen(
 
     AddTripBudgetContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         totalBudget = uiState.tripUiState.totalBudget,
         dailyBudget = uiState.tripUiState.dailyBudget,
         currencyCode = uiState.tripUiState.currency,
@@ -75,6 +78,7 @@ fun TripBudgetScreen(
 @Composable
 private fun AddTripBudgetContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     totalBudget: String,
     dailyBudget: String,
     currencyCode: String,
@@ -98,7 +102,12 @@ private fun AddTripBudgetContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -149,7 +158,12 @@ private fun AddTripBudgetContent(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

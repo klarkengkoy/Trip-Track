@@ -5,38 +5,30 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation3.runtime.NavKey
+import dev.klarkengkoy.triptrack.ui.navigation.Navigator
 
-data class BottomNavItem(val route: String, val icon: Int, val label: String, val isEnabled: Boolean = true)
+data class BottomNavItem(val route: NavKey, val icon: Int, val label: String, val isEnabled: Boolean = true)
 
 @Composable
 fun BottomNavigationBar(
-    navController: NavController,
+    navigator: Navigator,
+    currentRoute: NavKey?,
     items: List<BottomNavItem>,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(modifier = modifier) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(painterResource(id = item.icon), contentDescription = item.label) },
                 label = { Text(item.label) },
-                selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                selected = item.route == currentRoute,
                 enabled = item.isEnabled,
                 onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
+                    if (item.route != currentRoute) {
+                        navigator.navigate(item.route)
                     }
                 }
             )

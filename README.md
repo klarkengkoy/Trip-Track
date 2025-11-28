@@ -77,6 +77,7 @@ It leverages modern Android development tools and best practices to deliver a ro
 - Implement **Google Maps** for trip visualization.  
 - Upgrade to **Navigation 3** for unified and type-safe navigation.  
 - Add **unit, integration, and UI tests**.  
+- Migrate from **Firebase Auth** to **Credential Manager**.
 
 ---
 

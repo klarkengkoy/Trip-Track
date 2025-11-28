@@ -3,9 +3,9 @@ package dev.klarkengkoy.triptrack.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.remember
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import dev.klarkengkoy.triptrack.ui.login.LegalScreen
 import dev.klarkengkoy.triptrack.ui.login.LoginScreen
 import dev.klarkengkoy.triptrack.ui.login.LoginViewModel
@@ -13,28 +13,37 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
 @Composable
 fun LoginNavigation(viewModel: LoginViewModel) {
-    val navController = rememberNavController()
+    // 1. Initialize Navigation State for Navigation 3
+    // Start with Login screen. We must include it in topLevelRoutes to initialize its back stack.
+    val navigationState = rememberNavigationState(Login, setOf(Login))
+    val navigator = remember { Navigator(navigationState) }
 
     TripTrackTheme {
-        NavHost(navController = navController, startDestination = "login") {
-            composable("login") {
+        // 2. Create Entry Provider using DSL
+        val entryProvider = entryProvider {
+            entry<Login> {
                 val isLoading by viewModel.isLoading.collectAsState()
                 LoginScreen(
                     isLoading = isLoading,
                     signInProviders = viewModel.signInProviders,
                     onSignInClick = { signInType -> viewModel.onSignInRequested(signInType) },
-                    onLegalClick = { clickedText: String ->
-                        navController.navigate("legal/$clickedText")
+                    onLegalClick = { clickedText ->
+                        navigator.navigate(Legal(clickedText))
                     }
                 )
             }
-            composable("legal/{clicked_text}") { backStackEntry ->
-                val clickedText = backStackEntry.arguments?.getString("clicked_text") ?: ""
+            entry<Legal> { key ->
                 LegalScreen(
-                    clickedText = clickedText,
-                    onBack = { navController.popBackStack() }
+                    clickedText = key.clickedText,
+                    onBack = { navigator.goBack() }
                 )
             }
         }
+
+        // 3. Use NavDisplay with NavigationState.toEntries to support state saving and back handling
+        NavDisplay(
+            entries = navigationState.toEntries(entryProvider),
+            onBack = { navigator.goBack() }
+        )
     }
 }

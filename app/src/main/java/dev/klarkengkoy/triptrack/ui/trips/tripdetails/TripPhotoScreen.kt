@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +57,7 @@ import java.time.format.FormatStyle
 @Composable
 fun TripPhotoScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onNavigateNext: () -> Unit,
     viewModel: TripsViewModel
 ) {
@@ -80,6 +82,7 @@ fun TripPhotoScreen(
 
     AddTripPhotoContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         tripUiState = uiState.tripUiState,
         scale = scale,
         offset = offset,
@@ -108,6 +111,7 @@ fun TripPhotoScreen(
 @Composable
 private fun AddTripPhotoContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     tripUiState: TripUiState,
     scale: Float,
     offset: Offset,
@@ -132,7 +136,12 @@ private fun AddTripPhotoContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -240,7 +249,12 @@ private fun AddTripPhotoContent(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

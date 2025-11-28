@@ -57,22 +57,24 @@ sealed class TransactionCategory(val title: String, val icon: ImageVector, val r
             }
         }
 
-        val categories = listOf(
-            Accommodation,
-            Activities,
-            Drinks,
-            Entertainment,
-            FeesAndCharges,
-            Flights,
-            General,
-            GiftsAndSouvenirs,
-            Groceries,
-            Insurance,
-            Laundry,
-            Restaurants,
-            Shopping,
-            ToursAndEntry,
-            Transportation
-        ).sortedBy { it.title }
+        val categories by lazy {
+            listOf(
+                Accommodation,
+                Activities,
+                Drinks,
+                Entertainment,
+                FeesAndCharges,
+                Flights,
+                General,
+                GiftsAndSouvenirs,
+                Groceries,
+                Insurance,
+                Laundry,
+                Restaurants,
+                Shopping,
+                ToursAndEntry,
+                Transportation
+            ).sortedBy { it.title }
+        }
     }
 }

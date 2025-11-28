@@ -1,6 +1,7 @@
 package dev.klarkengkoy.triptrack.data.remote
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.PropertyName
 import dev.klarkengkoy.triptrack.data.Converters
 import dev.klarkengkoy.triptrack.model.Trip
 
@@ -8,7 +9,8 @@ data class FirebaseTrip(
     val id: String = "",
     val name: String = "",
     val currency: String = "",
-    val isCurrencyCustom: Boolean = false,
+    @get:PropertyName("currencyCustom") @set:PropertyName("currencyCustom")
+    var isCurrencyCustom: Boolean = false,
     val imageUri: String? = null,
     val imageOffsetX: Float = 0f,
     val imageOffsetY: Float = 0f,
@@ -17,7 +19,8 @@ data class FirebaseTrip(
     val endDate: Timestamp? = null,
     val dailyBudget: Double? = null,
     val totalBudget: Double? = null,
-    val isDeleted: Boolean = false,
+    @get:PropertyName("deleted") @set:PropertyName("deleted")
+    var isDeleted: Boolean = false,
     val dateCreated: Timestamp = Timestamp.now()
 ) {
     companion object {

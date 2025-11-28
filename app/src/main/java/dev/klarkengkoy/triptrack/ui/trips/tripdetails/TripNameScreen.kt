@@ -3,6 +3,7 @@ package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import dev.klarkengkoy.triptrack.ui.trips.TripsViewModel
 @Composable
 fun TripNameScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
@@ -35,6 +37,7 @@ fun TripNameScreen(
 
     TripNameContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         name = uiState.tripUiState.tripName,
         onNameChanged = { viewModel.onTripNameChanged(it) },
         onNextClicked = onNavigateNext
@@ -44,6 +47,7 @@ fun TripNameScreen(
 @Composable
 private fun TripNameContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     name: String,
     onNameChanged: (String) -> Unit,
     onNextClicked: () -> Unit
@@ -52,7 +56,12 @@ private fun TripNameContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -106,7 +115,12 @@ private fun TripNameContent(
             enabled = name.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .align(Alignment.BottomCenter)
         ) {
             Text("Next")

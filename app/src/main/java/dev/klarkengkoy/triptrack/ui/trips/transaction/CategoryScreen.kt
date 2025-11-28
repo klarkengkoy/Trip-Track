@@ -30,9 +30,18 @@ import dev.klarkengkoy.triptrack.ui.theme.customColors
 
 @Composable
 fun CategoryScreen(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onCategorySelected: (String) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding()
+            )
+    ) {
         Text(
             text = "Expense",
             style = MaterialTheme.typography.titleMedium,

@@ -20,7 +20,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,15 +29,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.ui.components.BottomNavItem
 import dev.klarkengkoy.triptrack.ui.components.BottomNavigationBar
 import dev.klarkengkoy.triptrack.ui.login.LoginViewModel
+import dev.klarkengkoy.triptrack.ui.navigation.Dashboard
 import dev.klarkengkoy.triptrack.ui.navigation.LoginNavigation
 import dev.klarkengkoy.triptrack.ui.navigation.MainNavigation
+import dev.klarkengkoy.triptrack.ui.navigation.Maps
+import dev.klarkengkoy.triptrack.ui.navigation.Media
+import dev.klarkengkoy.triptrack.ui.navigation.NavigationState
+import dev.klarkengkoy.triptrack.ui.navigation.Navigator
+import dev.klarkengkoy.triptrack.ui.navigation.Settings
+import dev.klarkengkoy.triptrack.ui.navigation.Trips
+import dev.klarkengkoy.triptrack.ui.navigation.rememberNavigationState
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 
 /**
@@ -59,10 +63,17 @@ fun TripTrackScreen(
 
     when (isSignedIn) {
         true -> {
-            val navController = rememberNavController()
+            // Initialize Navigation State for the Main Graph
+            val mainNavigationState = rememberNavigationState(
+                startRoute = Trips(null),
+                topLevelRoutes = setOf(Trips(null), Dashboard, Media, Maps, Settings)
+            )
+            val mainNavigator = remember { Navigator(mainNavigationState) }
+
             MainScreen(
                 snackbarHostState = snackbarHostState,
-                navController = navController,
+                navigationState = mainNavigationState,
+                navigator = mainNavigator,
                 mainUiState = mainUiState,
                 activeTripUiState = activeTripUiState,
                 setTopAppBar = { mainViewModel.setTopAppBarState(it.title, it.navigationIcon, it.actions, it.isCenterAligned) }
@@ -88,26 +99,34 @@ fun TripTrackScreen(
 private fun MainScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState,
-    navController: NavHostController,
+    navigationState: NavigationState,
+    navigator: Navigator,
     mainUiState: MainUiState,
     activeTripUiState: ActiveTripUiState,
     setTopAppBar: (TopAppBarState) -> Unit
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-
     val bottomNavItems = listOf(
-        BottomNavItem("trips", R.drawable.travel_luggage_and_bags_24px, "Trips"),
-        BottomNavItem("dashboard", R.drawable.dashboard_24px, "Dashboard", isEnabled = activeTripUiState.hasActiveTrip),
-        BottomNavItem("media", R.drawable.photo_album_24px, "Media", isEnabled = activeTripUiState.hasActiveTrip),
-        BottomNavItem("maps", R.drawable.map_24px, "Maps", isEnabled = activeTripUiState.hasActiveTrip),
-        BottomNavItem("settings", R.drawable.settings_24px, "Settings")
+        BottomNavItem(Trips(null), R.drawable.travel_luggage_and_bags_24px, "Trips"),
+        BottomNavItem(Dashboard, R.drawable.dashboard_24px, "Dashboard", isEnabled = activeTripUiState.hasActiveTrip),
+        BottomNavItem(Media, R.drawable.photo_album_24px, "Media", isEnabled = activeTripUiState.hasActiveTrip),
+        BottomNavItem(Maps, R.drawable.map_24px, "Maps", isEnabled = activeTripUiState.hasActiveTrip),
+        BottomNavItem(Settings, R.drawable.settings_24px, "Settings")
     )
 
     val isPreview = LocalInspectionMode.current
+    // Check if we are on a top level screen by checking if the current back stack has only 1 item
+    // AND the current top level route matches the active stack.
+    // A simpler heuristic for BottomNav visibility in Nav3 with these wizards:
+    // If the top of the current stack is one of the Tab keys, show it.
+    val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+    val currentKey = currentStack?.lastOrNull()
+    
     val shouldShowBottomNav = if (isPreview) {
         true
     } else {
-        bottomNavItems.any { navBackStackEntry?.destination?.route?.startsWith(it.route) == true }
+        // Show bottom nav if the current screen is one of the top-level destinations.
+        // Note: Trips(null) equality works because it's a data class.
+        currentKey in setOf(Trips(null), Dashboard, Media, Maps, Settings)
     }
 
     Scaffold(
@@ -134,7 +153,8 @@ private fun MainScreen(
                     exit = slideOutVertically(targetOffsetY = { it })
                 ) {
                     BottomNavigationBar(
-                        navController = navController,
+                        navigator = navigator,
+                        currentRoute = navigationState.topLevelRoute,
                         items = bottomNavItems
                     )
                 }
@@ -154,8 +174,10 @@ private fun MainScreen(
             }
         } else {
             MainNavigation(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding),
+                navigationState = navigationState,
+                navigator = navigator,
+//                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding,
                 setTopAppBar = setTopAppBar
             )
         }
@@ -167,12 +189,10 @@ private fun MainScreen(
 @Composable
 private fun MainScreenPreview() {
     TripTrackTheme {
-        MainScreen(
-            snackbarHostState = remember { SnackbarHostState() },
-            navController = rememberNavController(),
-            mainUiState = MainUiState(),
-            activeTripUiState = ActiveTripUiState(),
-            setTopAppBar = {}
-        )
+        // Preview requires dummy state, which is hard with internal classes.
+        // We can just show the Loading state or Mock objects if we had them.
+        Box(modifier = Modifier.fillMaxSize()) {
+            Text("Preview Placeholder")
+        }
     }
 }

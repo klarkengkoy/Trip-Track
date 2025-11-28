@@ -21,10 +21,12 @@ sealed class IncomeCategory(val title: String, val icon: ImageVector, val route:
             }
         }
 
-        val categories = listOf(
-            Salary,
-            Gifts,
-            OtherIncome
-        ).sortedBy { it.title }
+        val categories by lazy {
+            listOf(
+                Salary,
+                Gifts,
+                OtherIncome
+            ).sortedBy { it.title }
+        }
     }
 }

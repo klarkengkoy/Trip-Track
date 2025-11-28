@@ -4,7 +4,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -47,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
@@ -85,6 +87,7 @@ import java.util.Locale
 @Composable
 fun TripsScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     viewModel: TripsViewModel = hiltViewModel(),
     setTopAppBar: (TopAppBarState) -> Unit,
     onAddTrip: () -> Unit,
@@ -96,6 +99,7 @@ fun TripsScreen(
 
     TripsScreenContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         uiState = uiState,
         setTopAppBar = setTopAppBar,
         onActivateAndSelectTrip = { trip ->
@@ -127,6 +131,7 @@ fun TripsScreen(
 @Composable
 private fun TripsScreenContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     uiState: TripsUiState,
     setTopAppBar: (TopAppBarState) -> Unit,
     onActivateAndSelectTrip: (Trip) -> Unit,
@@ -145,6 +150,8 @@ private fun TripsScreenContent(
 ) {
     val selectedTrip = uiState.selectedTrip
     val selectionMode = uiState.selectionMode
+    // Hoist LazyListState to survive recompositions
+    val tripListState = rememberLazyListState()
 
     val onNavigateUp = {
         if (selectionMode) {
@@ -198,24 +205,31 @@ private fun TripsScreenContent(
         setTopAppBar(topAppBarState)
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            if (selectedTrip != null) {
-                TripTransactionsContent(
-                    trip = selectedTrip,
-                    transactions = uiState.selectedTripTransactions,
-                    onEditTransaction = onEditTransaction
-                )
-            } else {
-                TripListContent(
-                    trips = uiState.trips,
-                    onActivateAndSelectTrip = onActivateAndSelectTrip,
-                    selectionMode = selectionMode,
-                    selectedTrips = uiState.selectedTrips,
-                    onEnterSelectionMode = onEnterSelectionMode,
-                    onToggleTripSelection = onToggleTripSelection
-                )
-            }
+    // Layout Fix: Removed redundant Column wrapper.
+    // LazyColumn (in TripListContent) or Column (in TripTransactionsContent) now sit directly in Box.
+    Box(modifier = modifier
+        .fillMaxSize()
+        .padding(top = contentPadding.calculateTopPadding()) // FIX: Apply top padding to container
+        .clipToBounds()
+    ) {
+        if (selectedTrip != null) {
+            TripTransactionsContent(
+                trip = selectedTrip,
+                contentPadding = contentPadding,
+                transactions = uiState.selectedTripTransactions,
+                onEditTransaction = onEditTransaction
+            )
+        } else {
+            TripListContent(
+                trips = uiState.trips,
+                listState = tripListState,
+                contentPadding = contentPadding,
+                onActivateAndSelectTrip = onActivateAndSelectTrip,
+                selectionMode = selectionMode,
+                selectedTrips = uiState.selectedTrips,
+                onEnterSelectionMode = onEnterSelectionMode,
+                onToggleTripSelection = onToggleTripSelection
+            )
         }
 
         if (selectionMode) {
@@ -230,7 +244,7 @@ private fun TripsScreenContent(
             ExtendedFloatingActionButton(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(8.dp),
+                    .padding(bottom = contentPadding.calculateBottomPadding() + 16.dp),
                 onClick = {
                     if (selectedTrip != null) {
                         onAddTransaction()
@@ -279,6 +293,7 @@ private fun TripTransactionsContent(
     trip: Trip,
     transactions: List<Transaction>,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onEditTransaction: (String) -> Unit
 ) {
     val totalAmount = transactions.sumOf { it.amount }
@@ -295,12 +310,14 @@ private fun TripTransactionsContent(
         }
     }
 
+    // Transactions list also needs proper clearance for FAB
+    val bottomPadding = contentPadding.calculateBottomPadding() + 88.dp
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 16.dp), // FIX: Static top padding
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCard(
@@ -320,7 +337,11 @@ private fun TripTransactionsContent(
         val groupedByDate = transactions.sortedByDescending { it.date }.groupBy { it.date }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                // FIX: Removed dynamic top padding from here
+                bottom = bottomPadding
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             groupedByDate.forEach { (date, transactionsOnDate) ->
@@ -391,12 +412,12 @@ private fun TransactionListItem(
 ) {
     val notes = transaction.notes
     val categoryName = transaction.category.name
-    
+
     val categoryIcon = remember(categoryName) {
         TransactionCategory.categories.find { it.title == categoryName }?.icon
             ?: IncomeCategory.categories.find { it.title == categoryName }?.icon
     }
-    
+
     val categoryColor = getCategoryColor(categoryName)
 
 
@@ -433,11 +454,11 @@ private fun TransactionListItem(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                     Icon(
+                    Icon(
                         imageVector = Icons.Filled.ShoppingCart,
                         contentDescription = transaction.category.name,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
-                     )
+                    )
                 }
             },
             trailingContent = {
@@ -459,18 +480,27 @@ private fun TransactionListItem(
 @Composable
 private fun TripListContent(
     trips: List<Trip>,
+    listState: LazyListState,
     onActivateAndSelectTrip: (Trip) -> Unit,
     selectionMode: Boolean,
     selectedTrips: Set<String>,
     onEnterSelectionMode: (String) -> Unit,
     onToggleTripSelection: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues()
 ) {
-    val bottomPadding = 16.dp + if (selectionMode) 80.dp else 72.dp
+    // Adjusted bottom padding logic to clear FAB
+    val bottomPadding = contentPadding.calculateBottomPadding() + 88.dp
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = bottomPadding)
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 16.dp, // FIX: Static top padding here
+            end = 16.dp,
+            bottom = bottomPadding
+        )
     ) {
         items(items = trips, key = { it.id }) { trip ->
             val isSelected = selectedTrips.contains(trip.id)

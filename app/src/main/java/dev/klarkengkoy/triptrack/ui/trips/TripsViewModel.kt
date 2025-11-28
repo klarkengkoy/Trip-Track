@@ -1,5 +1,6 @@
 package dev.klarkengkoy.triptrack.ui.trips
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -169,6 +170,7 @@ class TripsViewModel @Inject constructor(
     fun populateTripDetails(tripId: String) {
         viewModelScope.launch {
             val trip = tripsRepository.getTrip(tripId)
+            Log.d("TripsViewModel", "Populating trip details for id: $tripId. Found trip: $trip")
             if (trip != null) {
                 // When editing a trip, we manually select it and populate the form state
                 _manualSelectedTripId.value = tripId
@@ -182,7 +184,7 @@ class TripsViewModel @Inject constructor(
                         startDate = trip.startDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
                         endDate = trip.endDate?.atStartOfDay(ZoneId.of("UTC"))?.toInstant()?.toEpochMilli(),
                         currency = trip.currency,
-                        isCurrencyCustom = trip.isCurrencyCustom,
+                        isCurrencyCustom = trip.isCurrencyCustom, // This should be true for custom currency
                         totalBudget = trip.totalBudget?.toBigDecimal()?.toPlainString() ?: "",
                         dailyBudget = trip.dailyBudget?.toBigDecimal()?.toPlainString() ?: ""
                     )
@@ -235,6 +237,11 @@ class TripsViewModel @Inject constructor(
     }
 
     fun onCustomCurrencyChanged(newCurrency: String) {
+        // Logic Fix:
+        // If the new currency string is NOT empty, we should treat it as a custom currency input.
+        // If it IS empty, it technically could be either, but since this function is called
+        // by the Custom Currency TextField, we should maintain the custom flag (true).
+        // The ONLY time we switch back to non-custom is via onCurrencySelected.
         _tripUiState.update { it.copy(currency = newCurrency, isCurrencyCustom = true) }
     }
 
@@ -266,6 +273,8 @@ class TripsViewModel @Inject constructor(
 
     fun resetAddTripState() {
         _tripUiState.value = TripUiState()
+        // Also clear any manual selection that might have been set during editing
+        _manualSelectedTripId.value = null
     }
 
     fun addTrip() {

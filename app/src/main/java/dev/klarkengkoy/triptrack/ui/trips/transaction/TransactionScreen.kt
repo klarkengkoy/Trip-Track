@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,6 +67,7 @@ import androidx.navigation.NavBackStackEntry
 import coil.compose.AsyncImage
 import dev.klarkengkoy.triptrack.R
 import dev.klarkengkoy.triptrack.model.PaymentMethod
+import dev.klarkengkoy.triptrack.model.TransactionCategory
 import dev.klarkengkoy.triptrack.ui.components.AmountVisualTransformation
 import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
 import dev.klarkengkoy.triptrack.ui.theme.getCategoryColor
@@ -76,12 +78,21 @@ import java.time.format.FormatStyle
 @Composable
 fun TransactionScreen(
     modifier: Modifier = Modifier,
+    transactionId: String? = null,
+    tripId: String? = null,
+    category: String? = null,
+    contentPadding: PaddingValues = PaddingValues(),
     viewModel: TransactionViewModel = hiltViewModel(),
     onSave: () -> Unit,
     onCategoryClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
+    // Load transaction data
+    LaunchedEffect(transactionId, tripId, category) {
+        viewModel.load(transactionId, tripId, category)
+    }
+
     // Observe navigation results for category updates
     val context = LocalContext.current
 
@@ -132,6 +143,7 @@ fun TransactionScreen(
 
     TransactionContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         uiState = uiState,
         onAmountChange = {
             val regex = Regex("""^\d*\.?\d{0,2}$""")
@@ -206,6 +218,7 @@ private fun TransactionInputItem(
 @Composable
 fun TransactionContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     uiState: TransactionUiState,
     onAmountChange: (String) -> Unit = {},
     onDescriptionChange: (String) -> Unit = {},
@@ -220,7 +233,12 @@ fun TransactionContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(
+                top = contentPadding.calculateTopPadding() + 16.dp,
+                start = 16.dp,
+                end = 16.dp,
+                bottom = contentPadding.calculateBottomPadding() + 16.dp
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -377,6 +395,7 @@ fun TransactionContentPreview() {
                 amount = "12345.67",
                 description = "Dinner with friends",
                 categoryTitle = "Restaurants",
+                categoryIcon = TransactionCategory.Restaurants.icon,
                 currencySymbol = "$",
                 paymentMethod = PaymentMethod("Credit Card", 0),
                 location = "Seoul, South Korea",
@@ -398,6 +417,7 @@ fun TransactionContentPreviewEmpty() {
                 amount = "0",
                 description = "",
                 categoryTitle = "General",
+                categoryIcon = TransactionCategory.General.icon,
                 currencySymbol = "$",
                 availablePaymentMethods = listOf(
                     PaymentMethod("Cash", 0),

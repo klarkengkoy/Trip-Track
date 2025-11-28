@@ -2,6 +2,7 @@ package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TripDatesScreen(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onNavigateNext: () -> Unit = {},
     viewModel: TripsViewModel
 ) {
@@ -63,6 +65,7 @@ fun TripDatesScreen(
 
     AddTripDatesContent(
         modifier = modifier,
+        contentPadding = contentPadding,
         startDateMillis = uiState.tripUiState.startDate,
         endDateMillis = uiState.tripUiState.endDate,
         onAddDatesClicked = { setShowDatePicker(true) },
@@ -126,6 +129,7 @@ fun TripDatesScreen(
 @Composable
 private fun AddTripDatesContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     startDateMillis: Long?,
     endDateMillis: Long?,
     onAddDatesClicked: () -> Unit,
@@ -138,7 +142,12 @@ private fun AddTripDatesContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -199,7 +208,12 @@ private fun AddTripDatesContent(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

@@ -3,6 +3,7 @@ package dev.klarkengkoy.triptrack.ui.trips.tripdetails
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +44,8 @@ import java.util.Currency
 
 @Composable
 fun TripSummaryScreen(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit,
     viewModel: TripsViewModel,
@@ -51,6 +54,8 @@ fun TripSummaryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     AddTripSummaryContent(
+        modifier = modifier,
+        contentPadding = contentPadding,
         tripUiState = uiState.tripUiState,
         onSaveTrip = onSaveTrip,
         onDiscard = onDiscard,
@@ -61,6 +66,7 @@ fun TripSummaryScreen(
 @Composable
 private fun AddTripSummaryContent(
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     tripUiState: TripUiState,
     onSaveTrip: () -> Unit,
     onDiscard: () -> Unit,
@@ -124,7 +130,12 @@ private fun AddTripSummaryContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(
+                    top = contentPadding.calculateTopPadding() + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -215,7 +226,12 @@ private fun AddTripSummaryContent(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 16.dp
+                )
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

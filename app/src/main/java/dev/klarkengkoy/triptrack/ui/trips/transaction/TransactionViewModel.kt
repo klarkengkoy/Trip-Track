@@ -2,6 +2,7 @@ package dev.klarkengkoy.triptrack.ui.trips.transaction
 
 import android.net.Uri
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,7 +23,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Currency
 import javax.inject.Inject
-import androidx.core.net.toUri
 
 data class TransactionUiState(
     val transactionId: String? = null,
@@ -57,15 +57,12 @@ class TransactionViewModel @Inject constructor(
         PaymentMethod("Bank Transfer", 0)
     )
 
-    init {
+    fun load(transactionId: String?, tripId: String?, category: String?) {
         viewModelScope.launch {
-            // Check if we are editing an existing transaction
-            val transactionId = savedStateHandle.get<String>("transactionId")
-
             if (transactionId != null) {
                 loadExistingTransaction(transactionId)
             } else {
-                initializeNewTransaction()
+                initializeNewTransaction(tripId, category)
             }
         }
     }
@@ -88,28 +85,6 @@ class TransactionViewModel @Inject constructor(
     }
     
     private suspend fun loadExistingTransaction(transactionId: String) {
-        // We first need to find which trip this transaction belongs to.
-        // Since getTransactions(tripId) requires tripId, and getTrip(tripId) returns a trip...
-        // Ideally, the repository should have a way to get a transaction directly by ID or we iterate.
-        // However, typically in this app flow, we might not have the tripId readily available if deep linking,
-        // but here navigation usually passes context.
-        // BUT, for now, let's assume we might need to search or the repository supports it.
-        // Wait, the repository interface shows: getTransactions(tripId). It doesn't have getTransaction(id).
-        // But the implementation uses Room DAO which likely has it or we can fetch from all trips.
-        
-        // Hack/Workaround: Since we don't have a direct getTransaction(id) in the interface exposed in the prompt (unless I missed it),
-        // but we are inside a specific Trip context usually. 
-        // Actually, looking at MainNavigation, we only pass transactionId: "$EDIT_TRANSACTION_ROUTE/{transactionId}"
-        
-        // Let's try to find the transaction. 
-        // Since we don't have a direct getTransaction method in the interface provided in the context,
-        // we will rely on the fact that we likely have the trip active or we have to scan.
-        // However, a better approach for the future is adding getTransaction(id) to the repo.
-        // For now, let's assume we can't change the repo interface easily without more context or let's try to use what we have.
-        
-        // The user is editing a transaction from the list inside a trip.
-        // We can try to find the transaction in the active trip if set, or search.
-        
         val activeTrip = tripsRepository.getActiveTrip().first()
         if (activeTrip != null) {
              val transactions = tripsRepository.getTransactions(activeTrip.id).first()
@@ -120,7 +95,6 @@ class TransactionViewModel @Inject constructor(
              }
         }
         
-        // If not found in active trip (edge case), we might need to search all trips (expensive but safe fallback)
         val allTrips = tripsRepository.getTrips().first()
         for (trip in allTrips) {
             val transactions = tripsRepository.getTransactions(trip.id).first()
@@ -168,9 +142,9 @@ class TransactionViewModel @Inject constructor(
         }
     }
 
-    private suspend fun initializeNewTransaction() {
-        val tripId = savedStateHandle.get<String>("tripId") ?: ""
-        val categoryRoute = savedStateHandle.get<String>("category")
+    private suspend fun initializeNewTransaction(tripIdArg: String?, categoryArg: String?) {
+        val tripId = tripIdArg ?: savedStateHandle.get<String>("tripId") ?: ""
+        val categoryRoute = categoryArg ?: savedStateHandle.get<String>("category")
 
         val expenseCategory = TransactionCategory.fromRoute(categoryRoute)
         val incomeCategory = IncomeCategory.fromRoute(categoryRoute)
