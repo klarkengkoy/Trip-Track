@@ -11,8 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -50,7 +49,6 @@ import dev.klarkengkoy.triptrack.ui.theme.TripTrackTheme
  * This composable observes the user's sign-in state and displays either the
  * main app content (with bottom navigation) or the login flow.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TripTrackScreen(
     loginViewModel: LoginViewModel,
@@ -84,7 +82,7 @@ fun TripTrackScreen(
         }
         null -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                LoadingIndicator(modifier = Modifier.size(128.dp))
+                CircularProgressIndicator(modifier = Modifier.size(128.dp))
             }
         }
     }

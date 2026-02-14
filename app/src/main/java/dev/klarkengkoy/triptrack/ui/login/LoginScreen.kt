@@ -14,8 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,7 +28,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LoginScreen(
     isLoading: Boolean,
@@ -44,7 +42,7 @@ fun LoginScreen(
             .safeDrawingPadding(),
     ) {
         if (isLoading) {
-             LoadingIndicator(modifier = Modifier.size(128.dp).align(Alignment.Center))
+             CircularProgressIndicator(modifier = Modifier.size(128.dp).align(Alignment.Center))
         } else {
             Column(
                 modifier = Modifier
@@ -97,7 +95,6 @@ fun LegalText(onLegalClick: (String) -> Unit, modifier: Modifier = Modifier) {
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SignInButton(
     modifier: Modifier = Modifier,

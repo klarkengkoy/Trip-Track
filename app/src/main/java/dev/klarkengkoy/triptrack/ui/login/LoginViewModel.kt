@@ -1,6 +1,5 @@
 package dev.klarkengkoy.triptrack.ui.login
 
-import android.util.Log
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
